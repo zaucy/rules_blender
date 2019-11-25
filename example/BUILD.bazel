@@ -1,0 +1,9 @@
+load("@rules_blender//:index.bzl", "blender_render")
+
+blender_render(
+    name = "example",
+    blend_file = "example.blend",
+    render_format = "PNG",
+    frame_start = 0,
+    frame_end = 0,
+)

@@ -1,0 +1,10 @@
+workspace(name = "rules_blender_example")
+
+local_repository(
+    name = "rules_blender",
+    path = "..",
+)
+
+load("@rules_blender//:index.bzl", "blender_repositories")
+
+blender_repositories()
