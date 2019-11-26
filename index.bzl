@@ -76,6 +76,7 @@ def _blender_render_impl(ctx):
             batch_frame_end = frame_end
 
         args = ctx.actions.args()
+        args.add("--log-level", "0")
         args.add("--background")
         args.add(ctx.file.blend_file.path)
 
@@ -111,17 +112,23 @@ def _blender_render_impl(ctx):
         else:
             args.add("--render-frame", batch_frame_start)
 
+        progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
+
+        if batch_frame_start != batch_frame_end:
+            progress_message += " frames {} to {}".format(
+                batch_frame_start,
+                batch_frame_end,
+            )
+        else:
+            progress_message += " frame {}".format(batch_frame_start)
+
         ctx.actions.run(
             executable = ctx.executable.blender_executable_,
             arguments = [args],
             inputs = [ctx.file.blend_file],
             outputs = batch_outputs,
             mnemonic = "BlenderRenderBatch{}".format(batch_num),
-            progress_message = "Rendering '{}' frames {} to {}".format(
-                ctx.file.blend_file.path,
-                batch_frame_start,
-                batch_frame_end,
-            ),
+            progress_message = progress_message,
         )
 
         outputs.extend(batch_outputs)
