@@ -51,6 +51,9 @@ def _zfill(s, n):
         s = "0" + s if len(s) < i else s
     return s
 
+def _rel_from(path):
+    return "/".join([".." for _ in path.split("/")][:-1])
+
 def _blender_render_impl(ctx):
 
     outputs = []
@@ -66,6 +69,9 @@ def _blender_render_impl(ctx):
     batch_count = ((frame_end+1) - frame_start) // batch_render
     if ((frame_end+1) - frame_start) % batch_render > 0:
         batch_count += 1
+
+    build_file_dir = ctx.build_file_path.rstrip("BUILD").rstrip("BUILD.bazel")
+    root_out_dir = _rel_from(ctx.file.blend_file.path) + "/" + ctx.bin_dir.path + "/" + build_file_dir
 
     for batch_num in range(0, batch_count):
         batch_frame_start = frame_start + (batch_num * batch_render)
@@ -83,7 +89,7 @@ def _blender_render_impl(ctx):
             args.add("--frame-start", batch_frame_start)
             args.add("--frame-end", batch_frame_end)
 
-        args.add("-o", "//" + ctx.genfiles_dir.path + "/" + ctx.attr.name + "####" + outext)
+        args.add("-o", "//" + root_out_dir + ctx.attr.name + "####" + outext)
         for frame_num in range(batch_frame_start, batch_frame_end + 1):
             frame_str = str(frame_num)
             if len(frame_str) > 4:
