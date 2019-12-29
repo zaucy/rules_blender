@@ -98,6 +98,9 @@ def _blender_render_impl(ctx):
         args.add("--background")
         args.add(ctx.file.blend_file.path)
 
+        if ctx.attr.scene:
+            args.add("--scene", ctx.attr.scene)
+
         if batch_frame_start != batch_frame_end:
             args.add("--frame-start", batch_frame_start)
             args.add("--frame-end", batch_frame_end)
@@ -119,9 +122,6 @@ def _blender_render_impl(ctx):
             args.add("--engine", ctx.attr.render_engine)
 
         args.add("--render-format", ctx.attr.render_format)
-
-        if ctx.attr.scene:
-            args.add("--scene", ctx.attr.scene)
 
         if batch_frame_start != batch_frame_end:
             args.add("--frame-start", batch_frame_start)
