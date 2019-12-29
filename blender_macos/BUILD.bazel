@@ -1,0 +1,7 @@
+exports_files(["Blender/Blender.app/Contents/MacOS/Blender"], visibility = ["//visibility:public"])
+
+alias(
+    name = "blender",
+    actual = ":Blender/Blender.app/Contents/MacOS/Blender",
+    visibility = ["//visibility:public"],
+)

@@ -1,10 +1,21 @@
 workspace(name = "rules_blender_example")
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "com_github_zaucy_rules_7zip",
+    strip_prefix = "rules_7zip-3fe3095b17073e3f59ac1a3c3bb8a221670eb9e2",
+    urls = ["https://github.com/zaucy/rules_7zip/archive/3fe3095b17073e3f59ac1a3c3bb8a221670eb9e2.zip"],
+    sha256 = "1ff64455e3321e916622d5dcaf354dfafe990b6c9427f1760055b0f15ad64a12",
+)
+
+load("@com_github_zaucy_rules_7zip//:setup.bzl", "setup_7zip")
+setup_7zip()
+
 local_repository(
     name = "rules_blender",
     path = "..",
 )
 
 load("@rules_blender//:index.bzl", "blender_repositories")
-
 blender_repositories()

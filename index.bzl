@@ -1,4 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@com_github_zaucy_rules_7zip//:repo.bzl", "http_7z")
 
 _blender_archives = {
     "2.81": {
@@ -12,11 +13,10 @@ _blender_archives = {
             urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81-linux-glibc217-x86_64.tar.bz2"],
             sha256 = "e201e7c3dd46aae4a464ec764190199b0ca9ff2e51f9883cd869a4539f33c592",
         ),
-        # TODO: Figure out macOS
-        # "blender_macos": struct(
-        #     urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81-macOS.dmg"],
-        #     sha256 = "6eb4148e85cf9f610aea1f2366f08a3ae37e5a782d66763ba59aeed99e2971b1",
-        # )
+        "blender_macos": struct(
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81-macOS.dmg"],
+            sha256 = "6eb4148e85cf9f610aea1f2366f08a3ae37e5a782d66763ba59aeed99e2971b1",
+        ),
     },
     "2.81a": {
         "blender_windows64": struct(
@@ -28,6 +28,10 @@ _blender_archives = {
             strip_prefix = "blender-2.81a-linux-glibc217-x86_64",
             urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81a-linux-glibc217-x86_64.tar.bz2"],
             sha256 = "08d718505d1eb1d261efba96b0787220a76d357ce5b94aca108fc9e0c339d6c6",
+        ),
+        "blender_macos": struct(
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81a-macOS.dmg"],
+            sha256 = "435b8bde06a14db0f21144f6277e1c70dafc6ea844c434854460c7456b44c251",
         ),
     },
 }
@@ -44,13 +48,26 @@ _render_format_extensions = {
     "BMP": ".bmp",
 }
 
+def _http_archive(urls = None, **kwargs):
+    use_http_7z = False
+
+    for url in urls:
+        if url.endswith(".dmg") or url.endswith(".7z"):
+            use_http_7z = True
+
+    if use_http_7z:
+        http_7z(urls = urls, **kwargs)
+    else:
+        http_archive(urls = urls, **kwargs)
+
+
 def blender_repositories(blender_version = "2.81a"):
     for name in _blender_archives[blender_version]:
         archive = _blender_archives[blender_version][name]
         urls = getattr(archive, "urls")
         sha256 = getattr(archive, "sha256", None)
         strip_prefix = getattr(archive, "strip_prefix", None)
-        http_archive(
+        _http_archive(
             name = name,
             urls = urls,
             sha256 = sha256,
