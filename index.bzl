@@ -30,6 +30,18 @@ _blender_archives = {
             sha256 = "08d718505d1eb1d261efba96b0787220a76d357ce5b94aca108fc9e0c339d6c6",
         ),
     },
+    "2.82": {
+        "blender_windows64": struct(
+            strip_prefix = "blender-2.82-windows64",
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.82/blender-2.82-windows64.zip"],
+            sha256 = "cff722fc0eca42eecd7a423b80c830f11c6dcb9ddff09611b335fa8fc207f42e",
+        ),
+        "blender_linux": struct(
+            strip_prefix = "blender-2.82-linux64",
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.82/blender-2.82-linux64.tar.xz"],
+            sha256 = "b13600fa2ca23ea1bba511e3a6599b6792acde80b180707c3ea75db592a9b916",
+        ),
+    },
 }
 
 _render_format_extensions = {
@@ -44,7 +56,7 @@ _render_format_extensions = {
     "BMP": ".bmp",
 }
 
-def blender_repositories(blender_version = "2.81a"):
+def blender_repositories(blender_version = "2.82"):
     for name in _blender_archives[blender_version]:
         archive = _blender_archives[blender_version][name]
         urls = getattr(archive, "urls")
