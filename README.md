@@ -16,8 +16,8 @@ http_archive(
     sha256 = "711636ec48e019101ced88d8398f1f219b1cff287473d09cd043b2d3e4bec7ec",
 )
 
-load("@rules_blender//:index.bzl", "blender_repository")
-blender_repository()
+load("@rules_blender//:repo.bzl", "blender_repository")
+blender_repository(name = "blender")
 ```
 
 ## Rules
