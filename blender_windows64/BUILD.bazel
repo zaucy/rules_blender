@@ -1,7 +1,0 @@
-exports_files(["blender.exe"])
-
-alias(
-    name = "blender",
-    actual = ":blender.exe",
-    visibility = ["//visibility:public"],
-)

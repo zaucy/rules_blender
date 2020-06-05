@@ -1,61 +1,3 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-_blender_archives = {
-    "2.81": {
-        "blender_windows64": struct(
-            strip_prefix = "blender-2.81-windows64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81-windows64.zip"],
-            sha256 = "b350533d23b678d870a3e78a2a0e27e952dc7db49ab801f00025a148dea0d2f5",
-        ),
-        "blender_linux": struct(
-            strip_prefix = "blender-2.81-linux-glibc217-x86_64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81-linux-glibc217-x86_64.tar.bz2"],
-            sha256 = "e201e7c3dd46aae4a464ec764190199b0ca9ff2e51f9883cd869a4539f33c592",
-        ),
-        # TODO: Figure out macOS
-        # "blender_macos": struct(
-        #     urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81-macOS.dmg"],
-        #     sha256 = "6eb4148e85cf9f610aea1f2366f08a3ae37e5a782d66763ba59aeed99e2971b1",
-        # )
-    },
-    "2.81a": {
-        "blender_windows64": struct(
-            strip_prefix = "blender-2.81a-windows64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81a-windows64.zip"],
-            sha256 = "87355b0a81d48ea336948294b9da8670eaae73667fae028e9a64cbb4104ceea1",
-        ),
-        "blender_linux": struct(
-            strip_prefix = "blender-2.81a-linux-glibc217-x86_64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.81/blender-2.81a-linux-glibc217-x86_64.tar.bz2"],
-            sha256 = "08d718505d1eb1d261efba96b0787220a76d357ce5b94aca108fc9e0c339d6c6",
-        ),
-    },
-    "2.82": {
-        "blender_windows64": struct(
-            strip_prefix = "blender-2.82-windows64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.82/blender-2.82-windows64.zip"],
-            sha256 = "cff722fc0eca42eecd7a423b80c830f11c6dcb9ddff09611b335fa8fc207f42e",
-        ),
-        "blender_linux": struct(
-            strip_prefix = "blender-2.82-linux64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.82/blender-2.82-linux64.tar.xz"],
-            sha256 = "b13600fa2ca23ea1bba511e3a6599b6792acde80b180707c3ea75db592a9b916",
-        ),
-    },
-    "2.82a": {
-        "blender_windows64": struct(
-            strip_prefix = "blender-2.82a-windows64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.82/blender-2.82a-windows64.zip"],
-            sha256 = "ce20e5f90df6e8661edce9b7fd5a08fc1cbd26398f3245d994fe2dbf4c6bfdf2",
-        ),
-        "blender_linux": struct(
-            strip_prefix = "blender-2.82a-linux64",
-            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.82/blender-2.82a-linux64.tar.xz"],
-            sha256 = "fb400258122525c51a5897199197e74010494f71f2b2122c4dd122324e6edebe",
-        ),
-    },
-}
-
 _render_format_extensions = {
     "TGA": "",
     "RAWTGA": "",
@@ -68,20 +10,6 @@ _render_format_extensions = {
     "BMP": ".bmp",
 }
 
-def blender_repositories(blender_version = "2.82a"):
-    for name in _blender_archives[blender_version]:
-        archive = _blender_archives[blender_version][name]
-        urls = getattr(archive, "urls")
-        sha256 = getattr(archive, "sha256", None)
-        strip_prefix = getattr(archive, "strip_prefix", None)
-        http_archive(
-            name = name,
-            urls = urls,
-            sha256 = sha256,
-            strip_prefix = strip_prefix,
-            build_file = "@rules_blender//{}:BUILD.bazel".format(name),
-        )
-
 def _zfill(s, n):
     for i in range(1, n + 1):
         s = "0" + s if len(s) < i else s
@@ -90,7 +18,7 @@ def _zfill(s, n):
 def _rel_from(path):
     return "/".join([".." for _ in path.split("/")][:-1])
 
-def _blender_render_impl(ctx):
+def blender_render_impl(ctx):
 
     outputs = []
     render_format = ctx.attr.render_format
@@ -165,7 +93,7 @@ def _blender_render_impl(ctx):
             progress_message += " frame {}".format(batch_frame_start)
 
         ctx.actions.run(
-            executable = ctx.executable.blender_executable_,
+            executable = ctx.executable.blender_executable,
             arguments = [args],
             inputs = [ctx.file.blend_file],
             outputs = batch_outputs,
@@ -179,8 +107,8 @@ def _blender_render_impl(ctx):
         files = depset(outputs),
     )
 
-_blender_render = rule(
-    implementation = _blender_render_impl,
+blender_render = rule(
+    implementation = blender_render_impl,
     attrs = {
         "blend_file": attr.label(
             allow_single_file = True,
@@ -213,29 +141,11 @@ _blender_render = rule(
         "scene": attr.string(),
         "frame_start": attr.int(mandatory = True),
         "frame_end": attr.int(mandatory = True),
-        "blender_executable_": attr.label(
-            mandatory = True,
+        "blender_executable": attr.label(
+            default = Label("@blender//:blender"),
             executable = True,
             allow_single_file = True,
             cfg = "host",
         ),
     },
 )
-
-def blender_render(blender_executable_ = None, **kwargs):
-
-    # Cannot 'select' default value of attr so we need to expose this attr but
-    # still prevent the user from using it.
-    # See issue: https://github.com/bazelbuild/bazel/issues/1698
-    if blender_executable_ != None:
-        fail("Cannot set internal attribute 'blender_executable_' of the 'blender_render' rule")
-
-    _blender_render(
-        blender_executable_ = select({
-            "@bazel_tools//src/conditions:host_windows": "@blender_windows64//:blender",
-            "@bazel_tools//src/conditions:host_windows_msvc": "@blender_windows64//:blender",
-            "@bazel_tools//src/conditions:host_windows_msys": "@blender_windows64//:blender",
-            "@bazel_tools//src/conditions:linux_x86_64": "@blender_linux//:blender",
-        }),
-        **kwargs
-    )
