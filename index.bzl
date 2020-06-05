@@ -18,7 +18,7 @@ def _zfill(s, n):
 def _rel_from(path):
     return "/".join([".." for _ in path.split("/")][:-1])
 
-def blender_render_impl(ctx):
+def _blender_render(ctx):
 
     outputs = []
     render_format = ctx.attr.render_format
@@ -108,7 +108,7 @@ def blender_render_impl(ctx):
     )
 
 blender_render = rule(
-    implementation = blender_render_impl,
+    implementation = _blender_render,
     attrs = {
         "blend_file": attr.label(
             allow_single_file = True,
