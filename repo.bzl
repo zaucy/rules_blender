@@ -40,15 +40,20 @@ exit 1
 
 set QUIET_OUTPUT=0
 
+set args=
 :args_loop
 if "%~1"=="" GOTO :start_blender
-if /I "%~1"=="--quiet" SET QUIET_OUTPUT=1
+if /I "%~1"=="--quiet" (
+    SET QUIET_OUTPUT=1
+    shift & goto :args_loop
+)
+set args=%args% %~1
 shift & goto :args_loop
 
 :start_blender
 
-if %QUIET_OUTPUT%==1 do (%BLENDER_EXECUTABLE% %* > NUL)
-if %QUIET_OUTPUT%==0 do (%BLENDER_EXECUTABLE% %*)
+if %QUIET_OUTPUT%==1 %BLENDER_EXECUTABLE% %args% > NUL
+if %QUIET_OUTPUT%==0 %BLENDER_EXECUTABLE% %args%
 """
 _blender_wrapper_sh = """
 #!/bin/sh
