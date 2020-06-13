@@ -1,11 +1,14 @@
 _windows_build_file_content = """
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+
+exports_files(["{BLENDER_VERSION}/blender.exe"])
+
 native_binary(
     name = "blender",
     visibility = ["//visibility:public"],
     src = ":blender_wrapper.cmd",
     out = "blender_wrapper.cmd",
-    data = ["blender.exe"],
+    data = ["{BLENDER_VERSION}/blender.exe"],
 )
 """
 
