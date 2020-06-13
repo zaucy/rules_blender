@@ -97,7 +97,7 @@ def _blender_render(ctx):
 
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
-            arguments = [args],
+            arguments = [args, "--quiet"],
             inputs = [ctx.file.blend_file],
             outputs = batch_outputs,
             mnemonic = "BlenderRenderBatch{}".format(batch_num),
