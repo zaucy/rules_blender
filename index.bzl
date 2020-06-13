@@ -147,7 +147,6 @@ blender_render = rule(
         "blender_executable": attr.label(
             default = Label("@blender//:blender"),
             executable = True,
-            allow_single_file = True,
             cfg = "host",
         ),
     },
