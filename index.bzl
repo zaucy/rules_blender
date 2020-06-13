@@ -84,6 +84,9 @@ def _blender_render(ctx):
 
         progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
 
+        if ctx.attr.scene:
+            progress_message += " scene '{}'".format(ctx.attr.scene)
+
         if batch_frame_start != batch_frame_end:
             progress_message += " frames {} to {}".format(
                 batch_frame_start,

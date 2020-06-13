@@ -1,15 +1,52 @@
 _windows_build_file_content = """
-exports_files(["blender.exe"])
-
-alias(
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+native_binary(
     name = "blender",
-    actual = ":blender.exe",
     visibility = ["//visibility:public"],
+    src = ":blender_wrapper.cmd",
+    out = "blender_wrapper.cmd",
+    data = ["blender.exe"],
 )
 """
 
 _build_file_content = """
-exports_files(["blender"], visibility = ["//visibility:public"])
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+native_binary(
+    name = "blender",
+    visibility = ["//visibility:public"],
+    src = ":blender_wrapper.sh",
+    out = "blender_wrapper.sh",
+    data = ["blender"],
+)
+"""
+
+_blender_wrapper_cmd = """
+@echo off
+
+set BLENDER_EXECUTABLE=
+
+for /F "usebackq tokens=*" %%a in (%~dp0%~nx0.runfiles_manifest) do (
+    for /F "tokens=1,2" %%b in ("%%a") do (
+        if %%b=="blender/blender.exe" do (
+            set BLENDER_EXECUTABLE=%%c
+            goto :found_blender_executable
+        )
+    )
+)
+
+echo rules_blender (%~nx0) Could not find blender in runfiles manifest
+exit 1
+
+:found_blender_executable
+
+%BLENDER_EXECUTABLE% %* > NUL
+"""
+_blender_wrapper_sh = """
+#!/bin/sh
+
+set -e
+
+./blender "$@" > /dev/null
 """
 
 _known_blender_archives = {
@@ -110,6 +147,8 @@ def _blender_repository(rctx):
     archive = _get_blender_archive(rctx)
     rctx.download_and_extract(archive.urls, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
     rctx.file("BUILD.bazel", archive.build_file_content, executable = False)
+    rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd, executable = True)
+    rctx.file("blender_wrapper.sh", _blender_wrapper_sh, executable = True)
 
 
 blender_repository = repository_rule(
