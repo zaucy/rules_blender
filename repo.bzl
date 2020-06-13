@@ -1,15 +1,86 @@
 _windows_build_file_content = """
-exports_files(["blender.exe"])
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
-alias(
+exports_files(["{BLENDER_VERSION}/blender.exe"])
+
+native_binary(
     name = "blender",
-    actual = ":blender.exe",
     visibility = ["//visibility:public"],
+    src = ":blender_wrapper.cmd",
+    out = "blender_wrapper.cmd",
+    data = ["{BLENDER_VERSION}/blender.exe"],
 )
 """
 
 _build_file_content = """
-exports_files(["blender"], visibility = ["//visibility:public"])
+exports_files(["{BLENDER_VERSION}/blender"])
+
+sh_binary(
+    name = "blender",
+    visibility = ["//visibility:public"],
+    srcs = [":blender_wrapper.bash"],
+    data = ["{BLENDER_VERSION}/blender"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+"""
+
+_blender_wrapper_cmd = """
+@echo off
+
+set BLENDER_EXECUTABLE=
+
+for /F "usebackq tokens=*" %%a in (%~dp0%~nx0.runfiles_manifest) do (
+    for /F "tokens=1,2" %%b in ("%%a") do (
+        if %%b=="blender/blender.exe" do (
+            set BLENDER_EXECUTABLE=%%c
+            goto :found_blender_executable
+        )
+    )
+)
+
+echo rules_blender (%~nx0) Could not find blender in runfiles manifest
+exit 1
+
+:found_blender_executable
+
+set QUIET_OUTPUT=0
+
+set args=
+:args_loop
+if "%~1"=="" GOTO :start_blender
+if /I "%~1"=="--quiet" (
+    SET QUIET_OUTPUT=1
+    shift & goto :args_loop
+)
+set args=%args% %~1
+shift & goto :args_loop
+
+:start_blender
+
+if %QUIET_OUTPUT%==1 %BLENDER_EXECUTABLE% %args% > NUL
+if %QUIET_OUTPUT%==0 %BLENDER_EXECUTABLE% %args%
+"""
+
+_blender_wrapper_sh = """
+#!/bin/bash
+
+set -e
+
+BLENDER_EXECUTABLE=$0.runfiles/blender/{BLENDER_VERSION}/blender
+
+QUIET_OUTPUT=0
+for arg do
+    shift
+    [ "$arg" = "--quiet" ] && QUIET_OUTPUT=1 && continue
+    set -- "$@" "$arg"
+done
+
+if [ "$QUIET_OUTPUT" = "1" ]
+then
+    $BLENDER_EXECUTABLE "$@" > /dev/null
+else
+    $BLENDER_EXECUTABLE "$@"
+fi
 """
 
 _known_blender_archives = {
@@ -108,9 +179,10 @@ def _get_blender_archive(rctx):
 
 def _blender_repository(rctx):
     archive = _get_blender_archive(rctx)
-    rctx.download_and_extract(archive.urls, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
-    rctx.file("BUILD.bazel", archive.build_file_content, executable = False)
-
+    rctx.download_and_extract(archive.urls, output = rctx.attr.blender_version, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
+    rctx.file("BUILD.bazel", archive.build_file_content.format(BLENDER_VERSION=rctx.attr.blender_version), executable = False)
+    rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd.format(BLENDER_VERSION=rctx.attr.blender_version), executable = True)
+    rctx.file("blender_wrapper.bash", _blender_wrapper_sh.format(BLENDER_VERSION=rctx.attr.blender_version), executable = True)
 
 blender_repository = repository_rule(
     implementation = _blender_repository,

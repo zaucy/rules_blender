@@ -84,6 +84,9 @@ def _blender_render(ctx):
 
         progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
 
+        if ctx.attr.scene:
+            progress_message += " scene '{}'".format(ctx.attr.scene)
+
         if batch_frame_start != batch_frame_end:
             progress_message += " frames {} to {}".format(
                 batch_frame_start,
@@ -94,7 +97,7 @@ def _blender_render(ctx):
 
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
-            arguments = [args],
+            arguments = [args, "--quiet"],
             inputs = [ctx.file.blend_file],
             outputs = batch_outputs,
             mnemonic = "BlenderRenderBatch{}".format(batch_num),
@@ -144,7 +147,6 @@ blender_render = rule(
         "blender_executable": attr.label(
             default = Label("@blender//:blender"),
             executable = True,
-            allow_single_file = True,
             cfg = "host",
         ),
     },
