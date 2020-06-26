@@ -140,7 +140,7 @@ _known_blender_archives = {
             build_file_content = _build_file_content,
         ),
     },
-    "2.83": {
+    "2.83.0": {
         "windows64": struct(
             strip_prefix = "blender-2.83.0-windows64",
             urls = ["https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.0-windows64.zip"],
@@ -151,6 +151,20 @@ _known_blender_archives = {
             strip_prefix = "blender-2.83.0-linux64",
             urls = ["https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.0-linux64.tar.xz"],
             sha256 = "c817d6c54785095fb3187ef5d5de3bae23c0b2570a8d9926525de7aea52b85c4",
+            build_file_content = _build_file_content,
+        ),
+    },
+    "2.83.1": {
+        "windows64": struct(
+            strip_prefix = "blender-2.83.1-windows64",
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.1-windows64.zip"],
+            sha256 = "69f107823f8e302e2f3f36512cad63c212eda1f44c731d76d0a8c8c7082db293",
+            build_file_content = _windows_build_file_content,
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-2.83.1-linux64",
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.1-linux64.tar.xz"],
+            sha256 = "8e3ad0c639aaed32e5d0db387082a7f061b6d78a356992f8c1a4584fcef71d0b",
             build_file_content = _build_file_content,
         ),
     },
@@ -188,7 +202,7 @@ blender_repository = repository_rule(
     implementation = _blender_repository,
     attrs = {
         "blender_version": attr.string(
-            default = "2.83",
+            default = "2.83.1",
             values = _known_blender_archives.keys()
         )
     },
