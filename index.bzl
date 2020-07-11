@@ -82,6 +82,11 @@ def _blender_render(ctx):
         else:
             args.add("--render-frame", batch_frame_start)
 
+        if ctx.attr.autoexec_scripts:
+            args.add("--enable-autoexec")
+        else:
+            args.add("--disable-autoexec")
+
         progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
 
         if ctx.attr.scene:
@@ -144,6 +149,7 @@ blender_render = rule(
         "scene": attr.string(),
         "frame_start": attr.int(mandatory = True),
         "frame_end": attr.int(mandatory = True),
+        "autoexec_scripts": attr.bool(default = False),
         "blender_executable": attr.label(
             default = Label("@blender//:blender"),
             executable = True,
