@@ -1,2 +1,17 @@
+load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+
 package(default_visibility = ["//visibility:public"])
+
 exports_files(["index.bzl", "repo.bzl"])
+
+stardoc(
+    name = "repo-docs",
+    input = "repo.bzl",
+    out = "repo_doc.md",
+)
+
+stardoc(
+    name = "index-docs",
+    input = "index.bzl",
+    out = "index_doc.md",
+)
