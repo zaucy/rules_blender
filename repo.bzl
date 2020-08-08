@@ -196,6 +196,20 @@ _known_blender_archives = {
             build_file_content = _build_file_content,
         ),
     },
+    "2.83.4": {
+        "windows64": struct(
+            strip_prefix = "blender-2.83.4-windows64",
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.4-windows64.zip"],
+            sha256 = "74a6c6baa45a0dd6fb38709a378e13991c7054e0d1044597be7ec228547dbd48",
+            build_file_content = _windows_build_file_content,
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-2.83.4-linux64",
+            urls = ["https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.4-linux64.tar.xz"],
+            sha256 = "b1a3b8761ae3ed5cb995ee34281ad16f9153f4a69d24d6889ed4e5794b61d342",
+            build_file_content = _build_file_content,
+        ),
+    },
 }
 
 def _os_key(os):
@@ -230,7 +244,7 @@ blender_repository = repository_rule(
     implementation = _blender_repository,
     attrs = {
         "blender_version": attr.string(
-            default = "2.83.3",
+            default = "2.83.4",
             values = _known_blender_archives.keys()
         )
     },
