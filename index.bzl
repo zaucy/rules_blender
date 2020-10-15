@@ -38,6 +38,7 @@ def _blender_render(ctx):
     root_out_dir = _rel_from(ctx.file.blend_file.path) + "/" + ctx.bin_dir.path + "/" + build_file_dir
 
     for batch_num in range(0, batch_count):
+        inputs = [ctx.file.blend_file]
         batch_frame_start = frame_start + (batch_num * batch_render)
         batch_frame_end = batch_frame_start + batch_render - 1
         batch_outputs = []
@@ -52,6 +53,10 @@ def _blender_render(ctx):
 
         if ctx.attr.scene:
             args.add("--scene", ctx.attr.scene)
+
+        if ctx.file.python_script:
+            args.add("--python", ctx.file.python_script)
+            inputs.append(ctx.file.python_script)
 
         if batch_frame_start != batch_frame_end:
             args.add("--frame-start", batch_frame_start)
@@ -100,10 +105,13 @@ def _blender_render(ctx):
         else:
             progress_message += " frame {}".format(batch_frame_start)
 
+        if ctx.file.python_script:
+            progress_message += " ({})".format(ctx.file.python_script.basename)
+
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
             arguments = [args, "--quiet"],
-            inputs = [ctx.file.blend_file],
+            inputs = inputs,
             outputs = batch_outputs,
             mnemonic = "BlenderRenderBatch{}".format(batch_num),
             progress_message = progress_message,
@@ -150,6 +158,10 @@ blender_render = rule(
         "frame_start": attr.int(mandatory = True),
         "frame_end": attr.int(mandatory = True),
         "autoexec_scripts": attr.bool(default = False),
+        "python_script": attr.label(
+            mandatory = False,
+            allow_single_file = [".py"],
+        ),
         "blender_executable": attr.label(
             default = Label("@blender//:blender"),
             executable = True,
