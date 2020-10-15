@@ -18,6 +18,8 @@ def _zfill(s, n):
 def _rel_from(path):
     return "/".join([".." for _ in path.split("/")][:-1])
 
+BlenderLibraryInfo = provider()
+
 def _blender_render(ctx):
 
     outputs = []
@@ -50,6 +52,9 @@ def _blender_render(ctx):
         args.add("--log-level", "0")
         args.add("--background")
         args.add(ctx.file.blend_file.path)
+
+        for dep in ctx.attr.deps:
+            inputs.extend(dep[BlenderLibraryInfo].blend_files)
 
         if ctx.attr.scene:
             args.add("--scene", ctx.attr.scene)
@@ -162,10 +167,29 @@ blender_render = rule(
             mandatory = False,
             allow_single_file = [".py"],
         ),
+        "deps": attr.label_list(
+            default = [],
+            allow_empty = True,
+            mandatory = False,
+            providers = [BlenderLibraryInfo],
+        ),
         "blender_executable": attr.label(
             default = Label("@blender//:blender"),
             executable = True,
             cfg = "host",
+        ),
+    },
+)
+
+def _blender_library(ctx):
+    return [BlenderLibraryInfo(blend_files = ctx.files.srcs)]
+
+blender_library = rule(
+    implementation = _blender_library,
+    attrs = {
+        "srcs": attr.label_list(
+            mandatory = True,
+            allow_files = [".blend"],
         ),
     },
 )
