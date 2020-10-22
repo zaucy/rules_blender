@@ -21,7 +21,6 @@ def _rel_from(path):
 BlenderLibraryInfo = provider()
 
 def _blender_render(ctx):
-
     outputs = []
     render_format = ctx.attr.render_format
     frame_start = ctx.attr.frame_start
@@ -130,13 +129,18 @@ def _blender_render(ctx):
 
 blender_render = rule(
     implementation = _blender_render,
+    doc = "Render a .blend file in to a list of frames",
     attrs = {
         "blend_file": attr.label(
+            doc = "Blend file to render",
             allow_single_file = True,
             mandatory = True,
         ),
-        "batch_render": attr.int(),
+        "batch_render": attr.int(
+            doc = "Number of frames to render at a time. If `0` all the frames will be rendered at once.",
+        ),
         "render_engine": attr.string(
+            doc = "Render engine to use. If `\"UNSET\"` then the render engine set in the blend file is used.",
             default = "UNSET",
             values = [
                 "UNSET",
@@ -146,6 +150,7 @@ blender_render = rule(
             ],
         ),
         "render_format": attr.string(
+            doc = "Render format. [See blender documentation](https://docs.blender.org/manual/en/latest/advanced/command_line/arguments.html#format-options)",
             mandatory = True,
             values = [
                 "TGA",
@@ -159,21 +164,35 @@ blender_render = rule(
                 "BMP",
             ],
         ),
-        "scene": attr.string(),
-        "frame_start": attr.int(mandatory = True),
-        "frame_end": attr.int(mandatory = True),
-        "autoexec_scripts": attr.bool(default = False),
+        "scene": attr.string(
+            doc = "Scene to render. If not set the default scene in the blend file is used.",
+        ),
+        "frame_start": attr.int(
+            doc = "Start frame in animation",
+            mandatory = True,
+        ),
+        "frame_end": attr.int(
+            doc = "End frame in animation",
+            mandatory = True,
+        ),
+        "autoexec_scripts": attr.bool(
+            doc = "Enable automatic Python script execution",
+            default = False,
+        ),
         "python_script": attr.label(
+            doc = "Python script to run right before render begins",
             mandatory = False,
             allow_single_file = [".py"],
         ),
         "deps": attr.label_list(
+            doc = "`blender_library` dependencies",
             default = [],
             allow_empty = True,
             mandatory = False,
             providers = [BlenderLibraryInfo],
         ),
         "blender_executable": attr.label(
+            doc = "Blender executable to use for the render.",
             default = Label("@blender//:blender"),
             executable = True,
             cfg = "host",
@@ -186,8 +205,10 @@ def _blender_library(ctx):
 
 blender_library = rule(
     implementation = _blender_library,
+    doc = "Group .blend files together to be used as `deps` in `blender_render`. Usually used when the .blend files in `srcs` are linked to a .blend file in `blender_render`.",
     attrs = {
         "srcs": attr.label_list(
+            doc = "List of blend files",
             mandatory = True,
             allow_files = [".blend"],
         ),

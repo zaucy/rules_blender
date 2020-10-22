@@ -303,7 +303,8 @@ blender_repository = repository_rule(
     attrs = {
         "blender_version": attr.string(
             default = "2.90.1",
-            values = _known_blender_archives.keys()
+            values = _known_blender_archives.keys(),
+            doc = "Blender version. Used to download blender archive.",
         )
     },
 )

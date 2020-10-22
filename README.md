@@ -37,11 +37,7 @@ blender_repository(name = "blender")
 
 ## Rules
 
-### `blender_render`
-
-```python
-blender_render(blend_file, batch_render, render_engine, render_format, scene, frame_start, frame_end, blender_executable)
-```
+[See documentation](docs/README.md)
 
 ## License
 
