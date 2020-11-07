@@ -50,6 +50,8 @@ def _blender_render(ctx):
         args = ctx.actions.args()
         args.add("--log-level", "0")
         args.add("--background")
+        args.add("-noaudio")
+        args.add("--factory-startup")
         args.add(ctx.file.blend_file.path)
 
         for dep in ctx.attr.deps:
