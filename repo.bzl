@@ -44,15 +44,24 @@ exit 1
 :found_blender_executable
 
 set QUIET_OUTPUT=0
+set PREFIX_CD=0
 
 set args=
 :args_loop
-if "%~1"=="" GOTO :start_blender
-if /I "%~1"=="--quiet" (
-    SET QUIET_OUTPUT=1
+set arg=%~1
+if "%arg%"=="" GOTO :start_blender
+if /I "%arg%"=="--quiet" (
+    set QUIET_OUTPUT=1
     shift & goto :args_loop
 )
-set args=%args% %~1
+if /I "%PREFIX_CD%"=="1" (
+    set PREFIX_CD=0
+    set arg=%cd%/%arg%
+)
+if /I "%arg%"=="-o" (
+    set PREFIX_CD=1
+)
+set args=%args% %arg%
 shift & goto :args_loop
 
 :start_blender
@@ -69,9 +78,12 @@ set -e
 BLENDER_EXECUTABLE=$0.runfiles/blender/{BLENDER_VERSION}/blender
 
 QUIET_OUTPUT=0
+PREFIX_CD=0
 for arg do
     shift
     [ "$arg" = "--quiet" ] && QUIET_OUTPUT=1 && continue
+    [ "$PREFIX_CD" = "1" ] && PREFIX_CD=0 && arg=$pwd/$arg
+    [ "$arg" = "-o" ] && PREFIX_CD=1
     set -- "$@" "$arg"
 done
 

@@ -68,7 +68,6 @@ def _blender_render(ctx):
             args.add("--frame-start", batch_frame_start)
             args.add("--frame-end", batch_frame_end)
 
-        args.add("-o", "//" + root_out_dir + ctx.attr.name + "####" + outext)
         for frame_num in range(batch_frame_start, batch_frame_end + 1):
             frame_str = str(frame_num)
             if len(frame_str) > 4:
@@ -79,6 +78,7 @@ def _blender_render(ctx):
             outfile = ctx.actions.declare_file(outfilename)
             batch_outputs.append(outfile)
 
+        args.add("-o", batch_outputs[0].dirname + "/" + ctx.attr.name + "####" + outext)
         args.add("-x", "1")
 
         if ctx.attr.render_engine != "UNSET":
