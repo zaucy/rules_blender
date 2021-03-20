@@ -52,6 +52,8 @@ def _blender_render(ctx):
         args.add("--background")
         args.add("-noaudio")
         args.add("--factory-startup")
+        if batch_render == 1:
+            args.add("--threads", "1")
         args.add(ctx.file.blend_file.path)
 
         for dep in ctx.attr.deps:
