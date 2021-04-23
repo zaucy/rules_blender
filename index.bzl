@@ -62,9 +62,9 @@ def _blender_render(ctx):
         if ctx.attr.scene:
             args.add("--scene", ctx.attr.scene)
 
-        if ctx.file.python_script:
-            args.add("--python", ctx.file.python_script)
-            inputs.append(ctx.file.python_script)
+        for python_script in ctx.files.python_scripts:
+            args.add("--python", python_script)
+            inputs.append(python_script)
 
         if batch_frame_start != batch_frame_end:
             args.add("--frame-start", batch_frame_start)
@@ -100,6 +100,10 @@ def _blender_render(ctx):
         else:
             args.add("--disable-autoexec")
 
+        if len(ctx.attr.python_script_args) > 0:
+            args.add("--")
+            args.add_all(ctx.attr.python_script_args)
+
         progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
 
         if ctx.attr.scene:
@@ -112,9 +116,15 @@ def _blender_render(ctx):
             )
         else:
             progress_message += " frame {}".format(batch_frame_start)
+        
+        has_python_scripts = len(ctx.files.python_scripts) > 0
 
-        if ctx.file.python_script:
-            progress_message += " ({})".format(ctx.file.python_script.basename)
+        if has_python_scripts:
+            progress_message += " ("
+            for python_script in ctx.files.python_scripts:
+                progress_message += "{}, ".format(python_script.basename)
+            # remove trailing ", "
+            progress_message = progress_message[:-2] + ")"
 
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
@@ -183,10 +193,13 @@ blender_render = rule(
             doc = "Enable automatic Python script execution",
             default = False,
         ),
-        "python_script": attr.label(
-            doc = "Python script to run right before render begins",
+        "python_scripts": attr.label_list(
+            doc = "Python scripts to run right before render begins",
             mandatory = False,
-            allow_single_file = [".py"],
+            allow_files = [".py"],
+        ),
+        "python_script_args": attr.string_list(
+            doc = "Arguments to pass to blender after '--'. Typically handled by the script the `python_script` attribute."
         ),
         "deps": attr.label_list(
             doc = "`blender_library` dependencies",
@@ -215,6 +228,80 @@ blender_library = rule(
             doc = "List of blend files",
             mandatory = True,
             allow_files = [".blend"],
+        ),
+    },
+)
+
+def _blender_script(ctx):
+    args = ctx.actions.args()
+    args.add("--log-level", "0")
+    args.add("--background")
+    args.add("-noaudio")
+    args.add("--factory-startup")
+
+    args.add(ctx.file.blend_file)
+
+    if ctx.attr.scene:
+        args.add("--scene", ctx.attr.scene)
+
+    args.add("--python", ctx.file.python_script)
+
+    if ctx.attr.autoexec_scripts:
+        args.add("--enable-autoexec")
+    else:
+        args.add("--disable-autoexec")
+
+    args.add("--")
+    for out in ctx.outputs.outs:
+        args.add("-o", out.path)
+
+    args.add_all(ctx.attr.python_script_args)
+
+    ctx.actions.run(
+        executable = ctx.executable.blender_executable,
+        arguments = [args, "--quiet"],
+        inputs = [ctx.file.blend_file, ctx.file.python_script],
+        outputs = ctx.outputs.outs,
+        mnemonic = "BlenderScript",
+    )
+
+    return DefaultInfo(files = depset(ctx.outputs.outs))
+
+blender_script = rule(
+    implementation = _blender_script,
+    doc = "Run a python script in blender on a specific blend file to get an output",
+    attrs = {
+        "blend_file": attr.label(
+            doc = "Blend file to run the script on",
+            allow_single_file = True,
+            mandatory = True,
+        ),
+        "scene": attr.string(
+            doc = "Scene to set before running python script (optional)",
+            mandatory = False,
+        ),
+        "python_script": attr.label(
+            doc = "Python script to run",
+            mandatory = False,
+            allow_single_file = [".py"],
+        ),
+        "python_script_args": attr.string_list(
+            doc = "Arguments to pass to blender after '--' and the built in -o arguments"
+        ),
+        "autoexec_scripts": attr.bool(
+            doc = "Enable automatic Python script execution",
+            default = False,
+        ),
+        "outs": attr.output_list(
+            allow_empty = False,
+            doc = "Output files the python_script writes to. These get passed to in format -o path/to/output/file",
+            mandatory = True,
+        ),
+        "blender_executable": attr.label(
+            doc = "Blender executable to use",
+            default = Label("@blender//:blender"),
+            executable = True,
+            cfg = "host",
         ),
     },
 )
