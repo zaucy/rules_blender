@@ -51,7 +51,10 @@ def _blender_render(ctx):
         args.add("--log-level", "0")
         args.add("--background")
         args.add("-noaudio")
-        args.add("--factory-startup")
+
+        if ctx.attr.factory_startup:
+            args.add("--factory-startup")
+
         if batch_render == 1:
             args.add("--threads", "1")
         args.add(ctx.file.blend_file.path)
@@ -131,7 +134,7 @@ def _blender_render(ctx):
             arguments = [args, "--quiet"],
             inputs = inputs,
             outputs = batch_outputs,
-            mnemonic = "BlenderRenderBatch{}".format(batch_num),
+            mnemonic = "BlenderRender",
             progress_message = progress_message,
         )
 
@@ -207,6 +210,10 @@ blender_render = rule(
             allow_empty = True,
             mandatory = False,
             providers = [BlenderLibraryInfo],
+        ),
+        "factory_startup": attr.bool(
+            doc = "Pass --factory-startup to blender. It is not recommended to set this to `False` since blender will access the machines HOME directory potentially breaking the render.",
+            default = True,
         ),
         "blender_executable": attr.label(
             doc = "Blender executable to use for the render.",
