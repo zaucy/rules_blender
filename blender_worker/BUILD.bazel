@@ -1,0 +1,29 @@
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+copy_file(
+    name = "worker_protocol_copy",
+    src = "@bazel_tools//src/main/protobuf:worker_protocol.proto",
+    out = "worker_protocol.proto",
+)
+
+py_proto_library(
+    name = "worker_protocol_py_proto",
+    srcs = ["worker_protocol.proto"],
+)
+
+cc_binary(
+    name = "blender_worker",
+    visibility = ["//visibility:public"],
+    srcs = ["blender_worker.cc"],
+    data = ["blender_worker.py", "worker_protocol_pb2.py"],
+    deps = [
+        "@bazelregistry_docopt_cpp//:docopt",
+        "@bazel_tools//src/main/protobuf:worker_protocol_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@boost//libs/process",
+        "@boost//libs/asio",
+    ],
+)

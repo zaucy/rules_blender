@@ -264,12 +264,22 @@ def _blender_script(ctx):
 
     args.add_all(ctx.attr.python_script_args)
 
+    ctx.actions.write("@flagfile", args)
+
+    worker_args = ctx.action.args()
+    worker_args.add("--blender", ctx.executable.blender_executable)
+
     ctx.actions.run(
-        executable = ctx.executable.blender_executable,
-        arguments = [args, "--quiet"],
+        executable = ctx.executable.blender_worker,
+        arguments = [worker_args, "@flagfile"],
         inputs = [ctx.file.blend_file, ctx.file.python_script],
         outputs = ctx.outputs.outs,
         mnemonic = "BlenderScript",
+        execution_requirements = {
+            "supports-workers": "1",
+            "supports-multiplex-workers": "1",
+            "requires-worker-protocol": "proto",
+        },
     )
 
     return DefaultInfo(files = depset(ctx.outputs.outs))
@@ -308,6 +318,12 @@ blender_script = rule(
             doc = "Blender executable to use",
             default = Label("@blender//:blender"),
             executable = True,
+            cfg = "host",
+        ),
+        "blender_worker": attr.label(
+            doc = "Blender worker to use",
+            default = Label("@rules_blender//blender_worker"),
+            executable =  True,
             cfg = "host",
         ),
     },

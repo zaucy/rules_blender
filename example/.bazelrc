@@ -1,0 +1,4 @@
+
+build --experimental_worker_cancellation
+build --strategy=BlenderScript=worker
+build --strategy=BlenderRender=worker

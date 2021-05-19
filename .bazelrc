@@ -1,0 +1,17 @@
+build --enable_platform_specific_config
+
+build:windows --compiler=clang-cl
+build:windows --cxxopt=/D_CRT_SECURE_NO_WARNINGS
+build:windows --cxxopt=-Xclang
+build:windows --cxxopt=-fcolor-diagnostics
+build:windows --cxxopt=-Xclang
+build:windows --cxxopt=-fansi-escape-codes
+build:windows --cxxopt=-Xclang
+build:windows --cxxopt=-std=c++20
+build:windows --host_cxxopt=-Xclang
+build:windows --host_cxxopt=-fcolor-diagnostics
+build:windows --host_cxxopt=-Xclang
+build:windows --host_cxxopt=-fansi-escape-codes
+build:windows --host_cxxopt=-Xclang
+build:windows --host_cxxopt=-std=c++20
+build:windows --host_cxxopt=/D_CRT_SECURE_NO_WARNINGS

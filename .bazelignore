@@ -1,3 +1,4 @@
 example
 .vscode
 docs
+compile_commands.json
