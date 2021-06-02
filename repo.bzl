@@ -346,6 +346,28 @@ _known_blender_archives = {
             build_file_content = _build_file_content,
         ),
     },
+    "2.93.0": {
+        "windows64": struct(
+            strip_prefix = "blender-windows64",
+            urls = [
+                "https://ftp.nluug.nl/pub/graphics/blender/release/Blender2.93/blender-2.93.0-windows-x64.zip",
+                "https://mirror.clarkson.edu/blender/release/Blender2.93/blender-2.93.0-windows-x64.zip",
+                "https://download.blender.org/release/Blender2.93/blender-2.93.0-windows-x64.zip",
+            ],
+            sha256 = "39a7cab57289e4f814b23f512a66b9c980a4ce1991fc710908be1d632690795a",
+            build_file_content = _windows_build_file_content,
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-2.93.0-stable+blender-v293-release.84da05a8b806-linux.x86_64-release",
+            urls = [
+                "https://ftp.nluug.nl/pub/graphics/blender/release/Blender2.93/blender-2.93.0-linux-x64.tar.xz",
+                "https://mirror.clarkson.edu/blender/release/Blender2.93/blender-2.93.0-linux-x64.tar.xz",
+                "https://download.blender.org/release/Blender2.93/blender-2.93.0-linux-x64.tar.xz",
+            ],
+            sha256 = "46b4b2ac3e0ef1768be4f63332d15d8a48bcf5bff18920d3b21e3b8aaaac85e3",
+            build_file_content = _build_file_content,
+        ),
+    },
 }
 
 def _os_key(os):
@@ -380,7 +402,7 @@ blender_repository = repository_rule(
     implementation = _blender_repository,
     attrs = {
         "blender_version": attr.string(
-            default = "2.92.0",
+            default = "2.93.0",
             values = _known_blender_archives.keys(),
             doc = "Blender version. Used to download blender archive.",
         )
