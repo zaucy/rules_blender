@@ -2,6 +2,11 @@
 
 [Bazel](https://bazel.build) rules for rendering .blend files with [Blender](https://www.blender.org/)
 
+## Roadmap
+
+- [ ] Blender render with [persistent workers](https://docs.bazel.build/versions/4.1.0/persistent-workers.html)
+- [ ] Sandbox blender render or script dependencies to improve deterministic builds
+
 ## Install
 
 Add this to your `WORKSPACE`
