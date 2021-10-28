@@ -57,7 +57,7 @@ def _blender_render(ctx):
 
         if batch_render == 1:
             args.add("--threads", "1")
-        args.add(ctx.file.blend_file.path)
+        args.add(ctx.file.blend_file)
 
         for dep in ctx.attr.deps:
             inputs.extend(dep[BlenderLibraryInfo].blend_files)

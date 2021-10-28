@@ -82,7 +82,7 @@ PREFIX_CD=0
 for arg do
     shift
     [ "$arg" = "--quiet" ] && QUIET_OUTPUT=1 && continue
-    [ "$PREFIX_CD" = "1" ] && PREFIX_CD=0 && arg=$pwd/$arg
+    [ "$PREFIX_CD" = "1" ] && PREFIX_CD=0 && arg=$(pwd)/$arg
     [ "$arg" = "-o" ] && PREFIX_CD=1
     set -- "$@" "$arg"
 done
