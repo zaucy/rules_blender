@@ -389,7 +389,7 @@ def _blender_test(ctx):
 blender_test = rule(
     implementation = _blender_test,
     test = True,
-    doc = "Run a python script in blender on a specific blend file to get an output",
+    doc = "Run a python script in blender on a specific blend file as a test",
     attrs = {
         "blend_file": attr.label(
             doc = "Blend file to run the script on",
@@ -406,7 +406,7 @@ blender_test = rule(
             allow_single_file = [".py"],
         ),
         "python_script_args": attr.string_list(
-            doc = "Arguments to pass to blender after '--' and the built in -o arguments"
+            doc = "Arguments to pass to blender after '--'"
         ),
         "autoexec_scripts": attr.bool(
             doc = "Enable automatic Python script execution",
