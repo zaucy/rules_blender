@@ -5,11 +5,22 @@ on:
   pull_request:
     branches: [ main ]
 env:
-  CC: clang-12
+  USE_BAZEL_VERSION: 5.0.0-pre.20211011.2
 jobs:
-  test:
+  test-linux:
     runs-on: ubuntu-latest
+    env:
+      CC: clang-12
     steps:
-      - uses: bazelbuild/setup-bazelisk@v1.0.1
       - uses: actions/checkout@v2
-      - run: bazel test //...
+      - run: bazelisk test //...
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: bazelisk test //...
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: bazelisk test //...
