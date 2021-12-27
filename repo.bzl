@@ -40,7 +40,6 @@ sh_binary(
     name = "blender",
     visibility = ["//visibility:public"],
     srcs = [":blender_wrapper.bash"],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 """
 
@@ -103,6 +102,8 @@ set -e
 
 SYS_BLENDER_EXECUTABLE={EXECUTABLE_PATH}
 BLENDER_EXECUTABLE=$0.runfiles/blender/{BLENDER_VERSION}/blender
+
+[[ -z "$SYS_BLENDER_EXECUTABLE" ]] || BLENDER_EXECUTABLE=$SYS_BLENDER_EXECUTABLE
 
 QUIET_OUTPUT=0
 PREFIX_CD=0
