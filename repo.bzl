@@ -23,6 +23,18 @@ native_binary(
 )
 """
 
+_macos_build_file_content = """
+exports_files(["{BLENDER_VERSION}/Blender.app/Contents/MacOS/Blender"])
+
+sh_binary(
+    name = "blender",
+    visibility = ["//visibility:public"],
+    srcs = [":blender_wrapper.bash"],
+    data = ["{BLENDER_VERSION}/Blender.app/Contents/MacOS/Blender"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+"""
+
 _build_file_content = """
 exports_files(["{BLENDER_VERSION}/blender"])
 
@@ -141,6 +153,10 @@ _platform_build_file_contents = {
         build_file_content = _build_file_content,
         sys_build_file_content = _sys_build_file_content,
     ),
+    "macos": struct(
+        build_file_content = _macos_build_file_content,
+        sys_build_file_content = _sys_build_file_content,
+    ),
 }
 
 _known_blender_archives = {
@@ -154,6 +170,11 @@ _known_blender_archives = {
             strip_prefix = "blender-3.0.0-linux-x64",
             urls = ["{}/Blender3.0/blender-3.0.0-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
             sha256 = "19b09dfcf5d3f3a068827454f0a704a9aa9c826350f73016121afef5f4d287ce",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.0/blender-3.0.0-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "ab34d1d1d9aa728e844b78c4673483adc34c4fe0ea61d45e57a386b8a7a5cfc6",
         ),
     },
     "2.81": {
@@ -403,6 +424,8 @@ def _os_key(os):
         return "windows64"
     elif os.name.find("linux") != -1:
         return "linux64"
+    elif os.name.find("mac") != -1:
+        return "macos"
     return os.name
 
 def _get_blender_archive(rctx, blender_version):
@@ -422,7 +445,7 @@ def _get_platform_build_file_contents(rctx):
     build_file_contents = _platform_build_file_contents.get(_os_key(rctx.os))
 
     if not build_file_contents:
-        fail("rules_blender unsupported os: os=".format(rctx.os.name))
+        fail("rules_blender unsupported os: os={}".format(rctx.os.name))
 
     return build_file_contents
 
@@ -455,6 +478,37 @@ def _find_system_installed_blender(rctx):
             return _find_linux_system_installed_blender(rctx)
     return blender_path
 
+def _download_and_extract_dmg(rctx, archive, blender_version):
+    dmg_output_path = "{}.dmg".format(blender_version)
+    rctx.download(archive.urls, output = dmg_output_path, sha256 = archive.sha256)
+    hdiutil = rctx.which("hdiutil")
+    if hdiutil == None:
+        fail("Unable to find hdiutil to mount .dmg file")
+    
+    mountroot = blender_version + "_mountroot"
+    mountvolume = rctx.path(mountroot + "/Blender")
+
+    if mountvolume.exists:
+        rctx.report_progress("Detaching old {}".format(mountvolume))
+        rctx.execute([hdiutil, "detach", mountvolume])
+
+    rctx.report_progress("Attaching {}".format(dmg_output_path))
+    hdiutil_attach_args = [hdiutil, "attach", "-noverify", dmg_output_path, "-mountroot", mountroot]
+    hdiutil_attach_result = rctx.execute(hdiutil_attach_args)
+    if hdiutil_attach_result.return_code != 0:
+        fail("Failed to attach .dmg blender image")
+
+    rctx.report_progress("Copying blender installation files")
+    
+    rctx.execute(["mkdir", blender_version])
+    rctx.execute(["cp", "-R", str(mountvolume) + "/", blender_version + "/"])
+
+    rctx.report_progress("Detaching {}".format(mountvolume))
+    hdiutil_detach_args = [hdiutil, "detach", mountvolume]
+    hdiutil_detach_result = rctx.execute(hdiutil_detach_args)
+    if hdiutil_detach_result.return_code != 0:
+        fail("Failed to detach blender image")
+
 def _blender_repository(rctx):
     blender_version = str(rctx.attr.blender_version)
     only_system_installed_blender = rctx.attr.only_system_installed_blender
@@ -484,7 +538,11 @@ def _blender_repository(rctx):
         rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
     elif blender_version != "system":
         rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
-        rctx.download_and_extract(archive.urls, output = blender_version, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
+        if rctx.os.name.find("mac") != -1:
+            blender_executable_path = str(rctx.path(blender_version + "/Blender.app/Contents/MacOS/Blender"))
+            _download_and_extract_dmg(rctx, archive, blender_version)
+        else:
+            rctx.download_and_extract(archive.urls, output = blender_version, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
     elif blender_version == "system":
         fail("blender_version was set to 'system', but no system installation of blender was found. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
 
