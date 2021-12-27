@@ -489,11 +489,19 @@ def _find_windows_system_installed_blender(rctx):
 
     return None
 
+def _find_linux_system_installed_blender(rctx):
+    flatpak_install_dir = rctx.path("/var/lib/flatpak/app/org.blender.Blender/current/active/files/blender")
+    if flatpak_install_dir.exists:
+        return flatpak_install_dir.get_child("blender")
+    return None
+
 def _find_system_installed_blender(rctx):
     blender_path = rctx.which("blender")
     if blender_path == None:
         if rctx.os.name.find("windows") != -1:
             return _find_windows_system_installed_blender(rctx)
+        else:
+            return _find_linux_system_installed_blender(rctx)
     return blender_path
 
 def _blender_repository(rctx):
