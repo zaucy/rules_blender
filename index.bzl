@@ -312,3 +312,112 @@ blender_script = rule(
         ),
     },
 )
+
+_hybrid_script_template = """
+:; set -e
+:; ./blender/blender_wrapper.bash {args} "$@"
+:; exit
+@echo off
+
+set "BLENDER_WRAPPER="
+set "MANIFEST_FILE=%CD%\\..\\MANIFEST"
+
+for /F "usebackq tokens=*" %%a in (%MANIFEST_FILE%) do (
+    for /F "tokens=1,2" %%b in ("%%a") do (
+        if %%b=="blender/blender_wrapper.cmd" do (
+            set BLENDER_WRAPPER=%%c
+            goto found_blender_wrapper
+        )
+    )
+)
+
+:found_blender_wrapper
+
+"%BLENDER_WRAPPER%" {args} %*
+"""
+
+def _path_to_str(path):
+    if path.dirname:
+        return path.dirname + "/" + path.basename
+    else:
+        return path.basename
+
+def _blender_test(ctx):
+    args = []
+
+    args += ["--log-level", "0"]
+    args.append("--background")
+    args.append("-noaudio")
+    args.append("--factory-startup")
+
+    args.append(_path_to_str(ctx.file.blend_file))
+
+    if ctx.attr.scene:
+        args += ["--scene", ctx.attr.scene]
+
+    args += ["--python", _path_to_str(ctx.file.python_script)]
+
+    if ctx.attr.autoexec_scripts:
+        args.append("--enable-autoexec")
+    else:
+        args.append("--disable-autoexec")
+
+    args.append("--")
+
+    args += ctx.attr.python_script_args
+
+    args.append("--quiet")
+
+    test_script = ctx.actions.declare_file(ctx.label.name + ".cmd")
+    ctx.actions.write(
+        test_script,
+        _hybrid_script_template.format(
+            args = " ".join(args),
+        ),
+        is_executable = True
+    )
+
+    return DefaultInfo(
+        executable = test_script,
+        runfiles = ctx.runfiles(files = ctx.files.data + [
+            ctx.executable.blender_executable,
+            ctx.file.blend_file,
+            ctx.file.python_script,
+        ]),
+    )
+
+blender_test = rule(
+    implementation = _blender_test,
+    test = True,
+    doc = "Run a python script in blender on a specific blend file to get an output",
+    attrs = {
+        "blend_file": attr.label(
+            doc = "Blend file to run the script on",
+            allow_single_file = True,
+            mandatory = True,
+        ),
+        "scene": attr.string(
+            doc = "Scene to set before running python script (optional)",
+            mandatory = False,
+        ),
+        "python_script": attr.label(
+            doc = "Python script to run",
+            mandatory = False,
+            allow_single_file = [".py"],
+        ),
+        "python_script_args": attr.string_list(
+            doc = "Arguments to pass to blender after '--' and the built in -o arguments"
+        ),
+        "autoexec_scripts": attr.bool(
+            doc = "Enable automatic Python script execution",
+            default = False,
+        ),
+        "data": attr.label_list(),
+        "blender_executable": attr.label(
+            doc = "Blender executable to use",
+            default = Label("@blender//:blender"),
+            executable = True,
+            cfg = "host",
+        ),
+    },
+)

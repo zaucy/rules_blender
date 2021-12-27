@@ -1,0 +1,21 @@
+build --enable_platform_specific_config
+
+build:windows --cxxopt=/std:c++latest
+build:windows --cxxopt=/permissive-
+build:windows --cxxopt=/Zc:__cplusplus
+build:windows --cxxopt=/diagnostics:caret
+build:windows --cxxopt=/DWIN32_LEAN_AND_MEAN
+build:windows --host_cxxopt=/std:c++latest
+build:windows --host_cxxopt=/permissive-
+build:windows --host_cxxopt=/Zc:__cplusplus
+build:windows --host_cxxopt=/diagnostics:caret
+build:windows --host_cxxopt=/DWIN32_LEAN_AND_MEAN
+
+build:linux --cxxopt=-std=c++20
+build:linux --host_cxxopt=-std=c++20
+
+startup --windows_enable_symlinks 
+build --enable_runfiles
+query --enable_runfiles
+build --nolegacy_external_runfiles
+query --nolegacy_external_runfiles

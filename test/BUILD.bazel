@@ -1,0 +1,7 @@
+load("//:index.bzl", "blender_test")
+
+blender_test(
+    name = "verticies_count",
+    blend_file = "test.blend",
+    python_script = "verticies_count.py",
+)
