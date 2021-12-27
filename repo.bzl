@@ -522,7 +522,6 @@ def _blender_repository(rctx):
         else:
             sys_blender_version = sys_blender_version_result.stdout.split("\n", 1)[0]
             sys_blender_version = sys_blender_version.replace("Blender", "").strip(" ").strip("\n").strip("\r")
-            print("sys_blender_version={}".format(sys_blender_version))
             if blender_version == "system":
                 blender_version = sys_blender_version
             if sys_blender_version != blender_version and only_system_installed_blender:
