@@ -13,6 +13,7 @@ jobs:
       CC: clang-12
     steps:
       - uses: actions/checkout@v2
+      - run: blender --version
       - run: bazelisk test --test_output=errors //test/...
   test-windows:
     runs-on: windows-2022
