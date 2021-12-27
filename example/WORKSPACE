@@ -20,4 +20,7 @@ local_repository(
 
 load("@rules_blender//:repo.bzl", "blender_repository")
 
-blender_repository(name = "blender")
+blender_repository(
+    name = "blender",
+    only_system_installed_blender = True,
+)
