@@ -18,12 +18,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "~/.cache/bazel"
-          key: bazel
+          key: ${{ runner.os }}-bazel
       - name: Mount bazel repo cache
         uses: actions/cache@v2
         with:
           path: "~/.cache/bazel-repo"
-          key: bazel-repo
+          key: ${{ runner.os }}-bazel-repo
       - name: bazel test //test/...
         run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
         env:
@@ -36,12 +36,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "~/.cache/bazel"
-          key: bazel
+          key: ${{ runner.os }}-bazel
       - name: Mount bazel repo cache
         uses: actions/cache@v2
         with:
           path: "~/.cache/bazel-repo"
-          key: bazel-repo
+          key: ${{ runner.os }}-bazel-repo
       - name: bazel test //test/...
         run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
         env:
@@ -54,12 +54,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "~/.cache/bazel"
-          key: bazel
+          key: ${{ runner.os }}-bazel
       - name: Mount bazel repo cache
         uses: actions/cache@v2
         with:
           path: "~/.cache/bazel-repo"
-          key: bazel-repo
+          key: ${{ runner.os }}-bazel-repo
       - name: bazel test //test/...
         run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
         env:
