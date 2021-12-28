@@ -1,0 +1,66 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+env:
+  USE_BAZEL_VERSION: 5.0.0-pre.20211011.2
+jobs:
+  test-linux:
+    runs-on: ubuntu-20.04
+    env:
+      CC: clang-12
+    steps:
+      - uses: actions/checkout@v2
+      - name: Mount bazel action cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: ${{ runner.os }}-bazel
+      - name: Mount bazel repo cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel-repo"
+          key: ${{ runner.os }}-bazel-repo
+      - name: bazel test //test/...
+        run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
+        env:
+          XDG_CACHE_HOME: ~/.cache/bazel-repo
+  test-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v2
+      - name: Mount bazel action cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: ${{ runner.os }}-bazel
+      - name: Mount bazel repo cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel-repo"
+          key: ${{ runner.os }}-bazel-repo
+      - name: bazel test //test/...
+        run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
+        env:
+          XDG_CACHE_HOME: ~/.cache/bazel-repo
+  test-macos:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v2
+      - name: Mount bazel action cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: ${{ runner.os }}-bazel
+      - name: Mount bazel repo cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel-repo"
+          key: ${{ runner.os }}-bazel-repo
+      - name: bazel test //test/...
+        run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
+        env:
+          XDG_CACHE_HOME: ~/.cache/bazel-repo

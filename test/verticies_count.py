@@ -12,5 +12,6 @@ if total_vertex_count == expected_vertex_count:
   print("Vertex Count is {}. Horray!".format(expected_vertex_count), file=sys.stderr)
   exit(0)
 else:
-  print("Vertex Count is {}. Boo! Expected {}".format(total_vertex_count, expected_vertex_count), file=sys.stderr)
+  print("[stderr] Vertex Count is {}. Boo! Expected {}".format(total_vertex_count, expected_vertex_count), file=sys.stderr)
+  print("[stdout] Vertex Count is {}. Boo! Expected {}".format(total_vertex_count, expected_vertex_count))
   exit(1)

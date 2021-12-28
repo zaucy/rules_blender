@@ -375,10 +375,8 @@ def _blender_test(ctx):
     test_script = ctx.actions.declare_file(ctx.label.name + ".cmd")
     ctx.actions.write(
         test_script,
-        _hybrid_script_template.format(
-            args = " ".join(args),
-        ),
-        is_executable = True
+        _hybrid_script_template.format(args = " ".join(args)),
+        is_executable = True,
     )
 
     runfiles = ctx.runfiles(files = ctx.files.data + [
@@ -387,6 +385,7 @@ def _blender_test(ctx):
         ctx.file.python_script,
     ])
     runfiles = runfiles.merge(ctx.attr._bash_runfiles[DefaultInfo].default_runfiles)
+    runfiles = runfiles.merge(ctx.attr.blender_executable[DefaultInfo].default_runfiles)
 
     return DefaultInfo(
         executable = test_script,
