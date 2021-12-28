@@ -4,6 +4,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 env:
   USE_BAZEL_VERSION: 5.0.0-pre.20211011.2
 jobs:
@@ -13,7 +14,20 @@ jobs:
       CC: clang-12
     steps:
       - uses: actions/checkout@v2
-      - run: bazelisk test --test_output=errors //test/...
+      - name: Mount bazel action cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
+      - name: Mount bazel repo cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel-repo"
+          key: bazel-repo
+      - name: bazel test //test/...
+        run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test --test_output=errors //test/...
+        env:
+          XDG_CACHE_HOME: ~/.cache/bazel-repo
   # test-windows:
   #   runs-on: windows-2022
   #   steps:
