@@ -323,6 +323,7 @@ _hybrid_script_template = """
 :; ls -la
 :; ls -la ../
 :; ls -la ../../
+:; echo $PWD
 :; $(rlocation blender/blender) {args} "$@"
 :; exit
 @echo off
