@@ -119,6 +119,8 @@ source "${{RUNFILES_DIR:-/dev/null}}/$f" 2>/dev/null || source "$(grep -sm1 "^$f
 BLENDER_EXECUTABLE={EXECUTABLE_PATH}
 test -z "$BLENDER_EXECUTABLE" && BLENDER_EXECUTABLE=$(rlocation blender/{BLENDER_VERSION}/blender)
 
+test -z "$BLENDER_EXECUTABLE" && echo "Cannot find blender executable" && exit 1
+
 QUIET_OUTPUT=0
 PREFIX_CD=0
 for arg do
