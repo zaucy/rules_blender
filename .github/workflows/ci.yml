@@ -28,13 +28,39 @@ jobs:
         run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
         env:
           XDG_CACHE_HOME: ~/.cache/bazel-repo
-  # test-windows:
-  #   runs-on: windows-2022
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - run: bazelisk test --test_output=errors //test/...
-  # test-macos:
-  #   runs-on: macos-11
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - run: bazelisk test --test_output=errors //test/...
+  test-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v2
+      - name: Mount bazel action cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
+      - name: Mount bazel repo cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel-repo"
+          key: bazel-repo
+      - name: bazel test //test/...
+        run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
+        env:
+          XDG_CACHE_HOME: ~/.cache/bazel-repo
+  test-macos:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v2
+      - name: Mount bazel action cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
+      - name: Mount bazel repo cache
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel-repo"
+          key: bazel-repo
+      - name: bazel test //test/...
+        run: bazelisk --bazelrc=.github/workflows/ci.bazelrc --bazelrc=.bazelrc test //test/...
+        env:
+          XDG_CACHE_HOME: ~/.cache/bazel-repo
