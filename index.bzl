@@ -385,6 +385,7 @@ def _blender_test(ctx):
         ctx.file.python_script,
     ])
     runfiles = runfiles.merge(ctx.attr._bash_runfiles[DefaultInfo].default_runfiles)
+    runfiles = runfiles.merge(ctx.attr.blender_executable[DefaultInfo].default_runfiles)
 
     return DefaultInfo(
         executable = test_script,

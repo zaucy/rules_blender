@@ -116,10 +116,13 @@ set -uo pipefail; f=bazel_tools/tools/bash/runfiles/runfiles.bash
 source "${{RUNFILES_DIR:-/dev/null}}/$f" 2>/dev/null || source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || source "$0.runfiles/$f" 2>/dev/null || source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
 # --- end runfiles.bash initialization v2 ---
 
-BLENDER_EXECUTABLE={EXECUTABLE_PATH}
-test -z "$BLENDER_EXECUTABLE" && BLENDER_EXECUTABLE=$(rlocation blender/{BLENDER_VERSION}/blender)
+BLENDER_EXECUTABLE="{EXECUTABLE_PATH}"
 
-test -z "$BLENDER_EXECUTABLE" && echo "Cannot find blender executable" && exit 1
+set +e
+test -z "$BLENDER_EXECUTABLE" && BLENDER_EXECUTABLE=$(rlocation blender/{BLENDER_VERSION}/blender)
+set -e
+
+test -z "$BLENDER_EXECUTABLE" && echo "Cannot find rlocation blender/{BLENDER_VERSION}/blender" && exit 1
 
 QUIET_OUTPUT=0
 PREFIX_CD=0
