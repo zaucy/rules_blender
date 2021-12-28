@@ -320,6 +320,9 @@ _hybrid_script_template = """
 :; source "${{RUNFILES_DIR:-/dev/null}}/$f" 2>/dev/null || source "$(grep -sm1 "^$f " "${{RUNFILES_MANIFEST_FILE:-/dev/null}}" | cut -f2- -d' ')" 2>/dev/null || source "$0.runfiles/$f" 2>/dev/null || source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || {{ echo>&2 "ERROR: cannot find $f"; exit 1; }}; f=; set -e
 :; # --- end runfiles.bash initialization v2 ---
 :; cat $(rlocation MANIFEST)
+:; ls -la
+:; ls -la ../
+:; ls -la ../../
 :; $(rlocation blender/blender) {args} "$@"
 :; exit
 @echo off
@@ -376,10 +379,8 @@ def _blender_test(ctx):
     test_script = ctx.actions.declare_file(ctx.label.name + ".cmd")
     ctx.actions.write(
         test_script,
-        _hybrid_script_template.format(
-            args = " ".join(args),
-        ),
-        is_executable = True
+        _hybrid_script_template.format(args = " ".join(args)),
+        is_executable = True,
     )
 
     runfiles = ctx.runfiles(files = ctx.files.data + [
