@@ -52,6 +52,7 @@ sh_binary(
     name = "blender",
     visibility = ["//visibility:public"],
     srcs = [":blender_wrapper.bash"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 """
 
@@ -107,8 +108,7 @@ if %QUIET_OUTPUT%==1 "%BLENDER_EXECUTABLE%" %args% > NUL
 if %QUIET_OUTPUT%==0 "%BLENDER_EXECUTABLE%" %args%
 """
 
-_blender_wrapper_sh = """
-#!/bin/bash
+_blender_wrapper_sh = """#!/bin/bash
 
 # --- begin runfiles.bash initialization v2 ---
 # Copy-pasted from the Bazel Bash runfiles library v2.
