@@ -456,8 +456,16 @@ def _get_platform_build_file_contents(rctx):
 
     return build_file_contents
 
+def _windows_program_files(rctx):
+    if "ProgramFiles" in rctx.os.environ:
+        return rctx.os.environ["ProgramFiles"]
+    elif "PROGRAMFILES" in rctx.os.environ:
+        return rctx.os.environ["PROGRAMFILES"]
+    
+    return "C:\\Program Files"
+
 def _find_windows_system_installed_blender(rctx):
-    blender_base_installdir = rctx.path(rctx.os.environ["ProgramFiles"] + "\\Blender Foundation\\")
+    blender_base_installdir = rctx.path(_windows_program_files(rctx) + "\\Blender Foundation\\")
 
     if not blender_base_installdir.exists:
         return None
