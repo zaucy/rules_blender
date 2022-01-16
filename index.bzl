@@ -10,6 +10,27 @@ _render_format_extensions = {
     "BMP": ".bmp",
 }
 
+# https://docs.blender.org/manual/en/latest/files/media/image_formats.html#image-formats
+_allowed_image_formats = [
+    ".bmp",
+    ".sgi",
+    ".rgb",
+    ".bw",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".jp2",
+    ".jp2",
+    ".j2c",
+    ".tga",
+    ".cin",
+    ".dpx",
+    ".exr",
+    ".hdr",
+    ".tif",
+    ".tiff",
+]
+
 def _zfill(s, n):
     for i in range(1, n + 1):
         s = "0" + s if len(s) < i else s
@@ -60,7 +81,7 @@ def _blender_render(ctx):
         args.add(ctx.file.blend_file)
 
         for dep in ctx.attr.deps:
-            inputs.extend(dep[BlenderLibraryInfo].blend_files)
+            inputs.extend(dep[BlenderLibraryInfo].srcs)
 
         if ctx.attr.scene:
             args.add("--scene", ctx.attr.scene)
@@ -225,16 +246,16 @@ blender_render = rule(
 )
 
 def _blender_library(ctx):
-    return [BlenderLibraryInfo(blend_files = ctx.files.srcs)]
+    return [BlenderLibraryInfo(srcs = ctx.files.srcs)]
 
 blender_library = rule(
     implementation = _blender_library,
-    doc = "Group .blend files together to be used as `deps` in `blender_render`. Usually used when the .blend files in `srcs` are linked to a .blend file in `blender_render`.",
+    doc = "Group .blend files and images together to be used as `deps` in `blender_render`.",
     attrs = {
         "srcs": attr.label_list(
-            doc = "List of blend files",
+            doc = "List of blend files and image files",
             mandatory = True,
-            allow_files = [".blend"],
+            allow_files = [".blend"] + _allowed_image_formats,
         ),
     },
 )
