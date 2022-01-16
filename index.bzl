@@ -49,6 +49,8 @@ def _blender_render(ctx):
     batch_render = ctx.attr.batch_render
     outext = _render_format_extensions[ctx.attr.render_format]
 
+    blender_render_inputs_file = ctx.actions.declare_file("{}_input_files".format(ctx.attr.name))
+
     if batch_render == 0:
         batch_render = (frame_end+1) - frame_start
 
@@ -59,8 +61,19 @@ def _blender_render(ctx):
     build_file_dir = ctx.build_file_path.rstrip("BUILD").rstrip("BUILD.bazel")
     root_out_dir = _rel_from(ctx.file.blend_file.path) + "/" + ctx.bin_dir.path + "/" + build_file_dir
 
+    inputs = [ctx.file.blend_file]
+
+    for dep in ctx.attr.deps:
+        inputs.extend(dep[BlenderLibraryInfo].srcs)
+
+    for python_script in ctx.files.python_scripts:
+        inputs.append(python_script)
+
+    ctx.actions.write(blender_render_inputs_file, "\n".join([input.path for input in inputs]))
+
+    inputs.append(blender_render_inputs_file)
+
     for batch_num in range(0, batch_count):
-        inputs = [ctx.file.blend_file]
         batch_frame_start = frame_start + (batch_num * batch_render)
         batch_frame_end = batch_frame_start + batch_render - 1
         batch_outputs = []
@@ -80,15 +93,13 @@ def _blender_render(ctx):
             args.add("--threads", "1")
         args.add(ctx.file.blend_file)
 
-        for dep in ctx.attr.deps:
-            inputs.extend(dep[BlenderLibraryInfo].srcs)
-
         if ctx.attr.scene:
             args.add("--scene", ctx.attr.scene)
 
+        args.add("-P", ctx.file._bazel_check_linked_script)
+
         for python_script in ctx.files.python_scripts:
             args.add("--python", python_script)
-            inputs.append(python_script)
 
         if batch_frame_start != batch_frame_end:
             args.add("--frame-start", batch_frame_start)
@@ -157,6 +168,9 @@ def _blender_render(ctx):
             outputs = batch_outputs,
             mnemonic = "BlenderRender",
             progress_message = progress_message,
+            env = {
+                "BAZEL_BLENDER_RENDER_INPUTS": blender_render_inputs_file.path,
+            },
         )
 
         outputs.extend(batch_outputs)
@@ -241,6 +255,10 @@ blender_render = rule(
             default = Label("@blender//:blender"),
             executable = True,
             cfg = "host",
+        ),
+        "_bazel_check_linked_script": attr.label(
+            default = Label("@rules_blender//rules_blender_scripts:bazel_check_linked.py"),
+            allow_single_file = True,
         ),
     },
 )
