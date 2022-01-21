@@ -18,9 +18,11 @@ with open(blender_render_inputs) as file:
 
 for blend_path in blend_paths:
   if not (blend_path in inputs):
-    sys.exit(
+    print(
       "Cannot find '{}'. Make sure '{}' is declared in a blender_library srcs in blender_render deps.".format(
         blend_path,
         os.path.basename(blend_path),
       ),
+      file=sys.stdout
     )
+    sys.exit(1)

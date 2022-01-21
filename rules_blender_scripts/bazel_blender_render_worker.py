@@ -3,12 +3,17 @@ import sys
 import json
 import os
 import argparse
+import traceback
 
-def handle_except(type, value, traceback):
-  errlog = open("blender_render_worker_error.log")
-  print("[%s] %s" % (type, value), file=errlog)
+debuglog = open("blender_render_worker.log", "w")
+
+def handle_except(type, value, _):
+  traceback.print_last(file=debuglog)
 
 sys.excepthook = handle_except
+
+base_argv_start_index = sys.argv.index('--')
+base_argv = sys.argv[base_argv_start_index+1:]
 
 parser = argparse.ArgumentParser(
   prog = "bazel_blender_render_worker.py",
@@ -71,7 +76,7 @@ class BazelWorkResponse:
       "requestId": self.request_id,
       "wasCancelled": self.was_cancelled,
     })
-    print("Writing work response: %s" % response_json)
+    print("Writing work response: %s" % response_json, file=debuglog)
     print(response_json, file=sys.stderr)
 
 def execfile(filepath):
@@ -87,18 +92,27 @@ def handle_work_request():
   if current_request.cancel:
     current_response.was_cancelled = True
     current_response.write()
-    print("Quitting due to cancel request")
+    print("Quitting due to cancel request", file=debuglog)
     bpy.ops.wm.quit_blender()
     return
 
-  args = parser.parse_args(current_request.arguments)
+  extra_args = []
 
-  print("Opening blend file %s" % args.blend_file)
+  try:
+    extra_args_start_index = current_request.arguments.index('--')
+    args = parser.parse_args(current_request.arguments[:extra_args_start_index])
+    extra_args = current_request.arguments[extra_args_start_index+1:]
+  except ValueError:
+    args = parser.parse_args(current_request.arguments)
+
+  print("Opening blend file %s" % args.blend_file, file=debuglog)
   bpy.ops.wm.open_mainfile(filepath=args.blend_file)
-  print("After opening %s" % args.blend_file)
+  print("After opening %s" % args.blend_file, file=debuglog)
+
+  sys.argv = base_argv.copy().extend(extra_args)
 
   for python_script in args.python_scripts:
-    print("Executing python script: %s" % python_script)
+    print("Executing python script: %s" % python_script, file=debuglog)
     execfile(python_script)
 
   if args.scene:
@@ -124,21 +138,21 @@ def handle_work_request():
       bpy.context.scene.render.filepath = bpy.context.scene.render.frame_path(frame=bpy.context.scene.frame_start)
 
   # Response will be written
-  print("Render start...")
+  print("Render start...", file=debuglog)
   bpy.ops.render.render(
     animation = args.render_anim,
     write_still = not args.render_anim,
   )
 
-  print("Render end...")
+  print("Render end...", file=debuglog)
 
 def wait_for_work_request():
   global current_request
   global current_response
 
-  print("Waiting for work request...")
+  print("Waiting for work request...", file=debuglog)
   current_request = BazelWorkRequest(json.loads(sys.stdin.readline()))
-  print("Received work request (id=%s)" % current_request.request_id)
+  print("Received work request (id=%s)" % current_request.request_id, file=debuglog)
   current_response = BazelWorkResponse(current_request)
   handle_work_request()
 
@@ -152,12 +166,12 @@ for arg in sys.argv:
 
 @bpy.app.handlers.persistent
 def render_complete_handler(unused0, unused1):
-  print("Render Complete!")
+  print("Render Complete!", file=debuglog)
   current_response.write()
   if persistent_worker:
     wait_for_work_request()
   else:
-    print("One shot done")
+    print("One shot done", file=debuglog)
     bpy.ops.wm.quit_blender()
 
 bpy.app.handlers.render_complete.append(render_complete_handler)
@@ -166,7 +180,7 @@ bpy.app.handlers.render_complete.append(render_complete_handler)
 if persistent_worker:
   wait_for_work_request()
 else:
-  print("Doing one shot request...")
+  print("Doing one shot request...", file=debuglog)
   current_request = BazelWorkRequest({
     "arguments": one_shot_args,
     "requestId": 0,

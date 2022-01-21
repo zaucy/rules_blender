@@ -8,18 +8,21 @@ stardoc(
     name = "index_docs",
     input = "index.bzl",
     out = "index.md",
+    tags = ["manual"],
 )
 
 stardoc(
     name = "repo_docs",
     input = "repo.bzl",
     out = "repo.md",
+    tags = ["manual"],
 )
 
 bzlws_copy(
     name = "copy_docs",
     out = "docs/{FILENAME}",
     force = True,
+    tags = ["manual"],
     srcs = [
         ":index_docs",
         ":repo_docs",
