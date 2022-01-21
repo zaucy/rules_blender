@@ -4,6 +4,11 @@ import json
 import os
 import argparse
 
+def handle_except(type, value, traceback):
+  print("[%s] %s" % (type, value))
+
+sys.excepthook = handle_except
+
 parser = argparse.ArgumentParser(
   prog = "bazel_blender_render_worker.py",
   description = "rules_blender mock blender arguments for worker",
@@ -30,19 +35,26 @@ class BazelWorkInput:
 
 class BazelWorkRequest:
   def __init__(self, work_request_json):
-    self.arguments = work_request_json["arguments"]
     self.inputs = []
-    self.request_id = work_request_json["requestId"]
+    self.request_id = 0
+    self.cancel = False
+    self.verbosity = 0
+
+    if "arguments" in work_request_json:
+      self.arguments = work_request_json["arguments"]
+
+    if "inputs" in work_request_json["inputs"]:
+      for input_json in work_request_json["inputs"]:
+        self.inputs.append(BazelWorkInput(input_json))
+
+    if "requestId" in work_request_json:
+      self.request_id = work_request_json["requestId"]
 
     if "cancel" in work_request_json:
       self.cancel = work_request_json["cancel"]
-    else:
-      self.cancel = False
 
-    self.verbosity = work_request_json["verbosity"]
-
-    for input_json in work_request_json["inputs"]:
-      self.inputs.append(BazelWorkInput(input_json))
+    if "verbosity" in work_request_json:
+      self.verbosity = work_request_json["verbosity"]
 
 class BazelWorkResponse:
   def __init__(self, request):
@@ -92,7 +104,7 @@ def handle_work_request():
     bpy.context.screen.scene=bpy.data.scenes[args.scene]
 
   if args.render_output:
-    bpy.context.scene.render.filepath = args.render_output
+    bpy.context.scene.render.filepath = os.path.abspath(args.render_output)
 
   # Response will be written
   print("Render start...")
