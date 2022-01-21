@@ -6,9 +6,14 @@ import argparse
 import traceback
 
 debuglog = open("blender_render_worker.log", "w")
+current_request = None
+current_response = None
 
 def handle_except(type, value, _):
-  traceback.print_last(file=debuglog)
+  if current_response is not None:
+    current_response.output = value
+    current_response.write()
+  traceback.print_last(file=sys.stdout)
 
 sys.excepthook = handle_except
 
@@ -30,9 +35,6 @@ parser.add_argument("-a", dest="render_anim", default=False, action="store_true"
 parser.add_argument("-E", metavar="engine", dest="engine")
 parser.add_argument("-F", metavar="format", dest="render_format", choices=['TGA', 'RAWTGA', 'JPEG', 'IRIS', 'IRIZ', 'AVIRAW', 'AVIJPEG', 'PNG', 'BMP'])
 parser.add_argument("-S", metavar="ExampleScene", dest="scene")
-
-current_request = None
-current_response = None
 
 class BazelWorkInput:
   def __init__(self, work_request_input_json):
@@ -109,7 +111,10 @@ def handle_work_request():
   bpy.ops.wm.open_mainfile(filepath=args.blend_file)
   print("After opening %s" % args.blend_file, file=debuglog)
 
-  sys.argv = base_argv.copy().extend(extra_args)
+  sys.argv = base_argv.copy()
+  sys.argv.append(args.blend_file)
+  sys.argv.append('--')
+  sys.argv.extend(extra_args)
 
   for python_script in args.python_scripts:
     print("Executing python script: %s" % python_script, file=debuglog)

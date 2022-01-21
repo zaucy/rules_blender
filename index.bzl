@@ -152,18 +152,28 @@ def _blender_render(ctx):
         ctx.actions.write(args_file, args)
         inputs.append(args_file)
 
-        worker_args = ctx.actions.args()
-        worker_args.add("--background")
-        worker_args.add("--factory-startup")
-        worker_args.add("-noaudio")
-        worker_args.add("--enable-autoexec")
-        worker_args.add("-P", ctx.file._bazel_blender_render_worker)
-        worker_args.add("--")
-        worker_args.add("--worker")
+        # worker_args = ctx.actions.args()
+        # worker_args.add("--background")
+        # worker_args.add("--factory-startup")
+        # worker_args.add("-noaudio")
+        # worker_args.add("--enable-autoexec")
+        # worker_args.add("-P", ctx.file._bazel_blender_render_worker)
+        # worker_args.add("--")
+        # worker_args.add("--worker")
 
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
-            arguments = [worker_args, "@%s" % args_file.path],
+            # arguments = [worker_args, "@%s" % args_file.path],
+            arguments = [
+                "--background",
+                "--factory-startup",
+                "-noaudio",
+                "--enable-autoexec",
+                "-P", ctx.file._bazel_blender_render_worker.path,
+                "--",
+                "--worker",
+                "@%s" % args_file.path,
+            ],
             inputs = inputs,
             outputs = batch_outputs,
             mnemonic = "BlenderRender",

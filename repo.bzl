@@ -115,7 +115,7 @@ shift & goto :args_loop
 
 :start_blender
 
-if %QUIET_OUTPUT%==2 "%BLENDER_EXECUTABLE%" %args% 2>&1 1>nul
+if %QUIET_OUTPUT%==2 "%BLENDER_EXECUTABLE%" %args% 3>&2 2>&1 1>&3
 if %QUIET_OUTPUT%==1 "%BLENDER_EXECUTABLE%" %args% 1>nul
 if %QUIET_OUTPUT%==0 "%BLENDER_EXECUTABLE%" %args% 3>&2 2>&1 1>&3
 """
