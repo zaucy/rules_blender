@@ -18,7 +18,7 @@ def handle_except(type, value, _):
 sys.excepthook = handle_except
 
 base_argv_start_index = sys.argv.index('--')
-base_argv = sys.argv[base_argv_start_index+1:]
+base_argv = sys.argv[:base_argv_start_index]
 
 parser = argparse.ArgumentParser(
   prog = "bazel_blender_render_worker.py",
@@ -51,7 +51,7 @@ class BazelWorkRequest:
     if "arguments" in work_request_json:
       self.arguments = work_request_json["arguments"]
 
-    if "inputs" in work_request_json["inputs"]:
+    if "inputs" in work_request_json:
       for input_json in work_request_json["inputs"]:
         self.inputs.append(BazelWorkInput(input_json))
 
@@ -108,12 +108,11 @@ def handle_work_request():
     args = parser.parse_args(current_request.arguments)
 
   print("Opening blend file %s" % args.blend_file, file=debuglog)
-  bpy.ops.wm.open_mainfile(filepath=args.blend_file)
+  bpy.ops.wm.open_mainfile(filepath=args.blend_file, use_scripts=True)
   print("After opening %s" % args.blend_file, file=debuglog)
 
   sys.argv = base_argv.copy()
   sys.argv.append(args.blend_file)
-  sys.argv.append("--enable-autoexec")
   sys.argv.append('--')
   sys.argv.extend(extra_args)
 
@@ -143,7 +142,29 @@ def handle_work_request():
     if bpy.context.scene.frame_start == bpy.context.scene.frame_end:
       bpy.context.scene.render.filepath = bpy.context.scene.render.frame_path(frame=bpy.context.scene.frame_start)
 
-  # Response will be written
+  # Request inputs may be 0 for a one shot. In that case we'll skip the inputs
+  # validation. This may need to be changed in the future.
+  if len(current_request.inputs) > 0:
+    for blend_path in bpy.utils.blend_paths():
+      blend_path = os.path.abspath(bpy.path.abspath(blend_path))
+      found_input = False
+      for req_input in current_request.inputs:
+        req_input_path = os.path.abspath(req_input.path)
+        if req_input_path == blend_path:
+          found_input = True
+          break
+      if not found_input:
+        current_response.output = "Cannot find '{}'. Make sure '{}' is declared in a blender_library srcs in blender_render deps.".format(
+          blend_path,
+          os.path.basename(blend_path),
+        )
+        current_response.output += "\nChecked these paths:\n"
+        for req_input in current_request.inputs:
+          req_input_path = os.path.abspath(req_input.path)
+          current_response.output += " - " + req_input_path
+        current_response.write()
+        return
+
   print("Render start...", file=debuglog)
   bpy.ops.render.render(
     animation = args.render_anim,

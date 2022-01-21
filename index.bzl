@@ -146,6 +146,7 @@ def _blender_render(ctx):
         inputs.append(args_file)
 
         worker_args = ctx.actions.args()
+        worker_args.add("--log-level", "0")
         worker_args.add("--background")
         worker_args.add("--factory-startup")
         worker_args.add("-noaudio")
@@ -245,10 +246,6 @@ blender_render = rule(
             executable = True,
             cfg = "host",
         ),
-        "_bazel_check_linked_script": attr.label(
-            default = Label("@rules_blender//rules_blender_scripts:bazel_check_linked.py"),
-            allow_single_file = True,
-        ),
         "_bazel_blender_render_worker": attr.label(
             default = Label("@rules_blender//rules_blender_scripts:bazel_blender_render_worker.py"),
             allow_single_file = True,
@@ -302,7 +299,7 @@ def _blender_script(ctx):
 
     ctx.actions.run(
         executable = ctx.executable.blender_executable,
-        arguments = [args],
+        arguments = [args, "--quiet"],
         inputs = [ctx.file.blend_file, ctx.file.python_script],
         outputs = ctx.outputs.outs,
         mnemonic = "BlenderScript",
