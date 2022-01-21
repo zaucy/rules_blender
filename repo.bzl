@@ -99,6 +99,10 @@ if /I "%arg%"=="--quiet" (
     set QUIET_OUTPUT=1
     shift & goto :args_loop
 )
+if /I "%arg%"=="--worker" (
+    set QUIET_OUTPUT=2
+    shift & goto :args_loop
+)
 if /I "%PREFIX_CD%"=="1" (
     set PREFIX_CD=0
     set arg=%cd%/%arg%
@@ -111,8 +115,9 @@ shift & goto :args_loop
 
 :start_blender
 
-if %QUIET_OUTPUT%==1 "%BLENDER_EXECUTABLE%" %args% > NUL
-if %QUIET_OUTPUT%==0 "%BLENDER_EXECUTABLE%" %args%
+if %QUIET_OUTPUT%==2 "%BLENDER_EXECUTABLE%" %args% 2>&1 1>nul
+if %QUIET_OUTPUT%==1 "%BLENDER_EXECUTABLE%" %args% 1>nul
+if %QUIET_OUTPUT%==0 "%BLENDER_EXECUTABLE%" %args% 3>&2 2>&1 1>&3
 """
 
 _blender_wrapper_sh = """#!/bin/bash
@@ -136,16 +141,22 @@ PREFIX_CD=0
 for arg do
     shift
     [ "$arg" = "--quiet" ] && QUIET_OUTPUT=1 && continue
+    [ "$arg" = "--worker" ] && QUIET_OUTPUT=2 && continue
     [ "$PREFIX_CD" = "1" ] && PREFIX_CD=0 && arg=$(pwd)/$arg
     [ "$arg" = "-o" ] && PREFIX_CD=1
     set -- "$@" "$arg"
 done
 
+if [ "$QUIET_OUTPUT" = "2" ]
+then
+    $BLENDER_EXECUTABLE "$@" 2>&1 1>/dev/null
+fi
+
 if [ "$QUIET_OUTPUT" = "1" ]
 then
-    $BLENDER_EXECUTABLE "$@" > /dev/null
+    $BLENDER_EXECUTABLE "$@" 1>/dev/null
 else
-    $BLENDER_EXECUTABLE "$@"
+    $BLENDER_EXECUTABLE "$@" 3>&2 2>&1 1>&3
 fi
 """
 
@@ -607,7 +618,7 @@ def _blender_repository(rctx):
     
     enabled_devices = []
 
-    blender_env_info = json.decode(check_gpus_result.stderr)
+    blender_env_info = json.decode(check_gpus_result.stdout)
 
     cycles_device_types = rctx.attr.cycles_device_types
 

@@ -2,4 +2,5 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "bazel_check_linked.py",
+    "bazel_blender_render_worker.py",
 ])
