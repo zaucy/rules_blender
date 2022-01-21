@@ -2,6 +2,7 @@ _windows_build_file_content = """
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
 exports_files(["{BLENDER_VERSION}/blender.exe"])
+exports_files(["enable_cycles_devices.py"])
 
 native_binary(
     name = "blender",
@@ -15,6 +16,8 @@ native_binary(
 _windows_sys_build_file_content = """
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
+exports_files(["enable_cycles_devices.py"])
+
 native_binary(
     name = "blender",
     visibility = ["//visibility:public"],
@@ -25,6 +28,7 @@ native_binary(
 
 _macos_build_file_content = """
 exports_files(["{BLENDER_VERSION}/Blender.app/Contents/MacOS/Blender"])
+exports_files(["enable_cycles_devices.py"])
 
 sh_binary(
     name = "blender",
@@ -37,6 +41,7 @@ sh_binary(
 
 _build_file_content = """
 exports_files(["{BLENDER_VERSION}/blender"])
+exports_files(["enable_cycles_devices.py"])
 
 sh_binary(
     name = "blender",
@@ -48,6 +53,8 @@ sh_binary(
 """
 
 _sys_build_file_content = """
+exports_files(["enable_cycles_devices.py"])
+
 sh_binary(
     name = "blender",
     visibility = ["//visibility:public"],
@@ -524,6 +531,33 @@ def _download_and_extract_dmg(rctx, archive, blender_version):
     if hdiutil_detach_result.return_code != 0:
         fail("Failed to detach blender image")
 
+_find_blender_gpus_script = """
+import bpy
+import sys
+import json
+
+def print_blender_env_info():
+    preferences = bpy.context.preferences
+    cycles_preferences = preferences.addons["cycles"].preferences
+    cycles_preferences.get_devices()
+
+    devices = []
+    for device in cycles_preferences.devices:
+        devices.append({"name": device.name, "type": device.type})
+    
+    json.dump({"devices": devices}, sys.stderr)
+
+print_blender_env_info()
+"""
+
+_enable_cycles_devices_py = """
+import bpy
+
+cycles_preferences = bpy.context.preferences.addons["cycles"].preferences
+cycles_preferences.get_devices()
+for device in cycles_preferences.devices:
+"""
+
 def _blender_repository(rctx):
     blender_version = str(rctx.attr.blender_version)
     only_system_installed_blender = rctx.attr.only_system_installed_blender
@@ -564,6 +598,47 @@ def _blender_repository(rctx):
     rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path.replace("/", "\\")), executable = True)
     rctx.file("blender_wrapper.bash", _blender_wrapper_sh.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path), executable = True)
 
+    rctx.file("check_gpus.py", _find_blender_gpus_script)
+    check_gpus_result = rctx.execute([
+        rctx.path("blender_wrapper.cmd"),
+        "-b",
+        "-P", rctx.path("check_gpus.py")
+    ])
+    
+    enabled_devices = []
+
+    blender_env_info = json.decode(check_gpus_result.stderr)
+
+    cycles_device_types = rctx.attr.cycles_device_types
+
+    if len(cycles_device_types) == 0 and "RULES_BLENDER_CYCLES_DEVICE_TYPES" in rctx.os.environ:
+        cycles_device_types = rctx.os.environ["RULES_BLENDER_CYCLES_DEVICE_TYPES"].split(",")
+
+    if len(cycles_device_types) > 0:
+        for cycles_device_type in cycles_device_types:
+            for device in blender_env_info["devices"]:
+                if cycles_device_type == device["type"]:
+                    enabled_devices.append(device)
+        
+        if len(enabled_devices) == 0:
+            devices_str = ""
+            for device in blender_env_info["devices"]:
+                devices_str += "\t({})\t\t{}\n".format(device["type"], device["name"])
+            fail("blender_repository attr cycles_device_types was set, but no matching device types were found.\nAvailable device options are the following:\n{}".format(devices_str))
+        
+        enable_cycles_devices_py = _enable_cycles_devices_py
+
+        for device in enabled_devices:
+            enable_cycles_devices_py += "\n".join([
+                "\tif device.name == \"%s\" and device.type == \"%s\":" % (device["name"], device["type"]),
+                "\t\tdevice.use = True",
+                "\t\tcycles_preferences.compute_device_type = device.type",
+            ])
+
+        rctx.file("enable_cycles_devices.py", enable_cycles_devices_py)
+    else:
+        rctx.file("enable_cycles_devices.py", "")
+
 blender_repository = repository_rule(
     implementation = _blender_repository,
     attrs = {
@@ -572,6 +647,7 @@ blender_repository = repository_rule(
             default = "3.0.0",
             values = _known_blender_archives.keys() + ["system"],
             doc = "Blender version. Used to download blender archive.",
-        )
+        ),
+        "cycles_device_types": attr.string_list(),
     },
 )

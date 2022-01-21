@@ -97,6 +97,7 @@ def _blender_render(ctx):
             args.add("--scene", ctx.attr.scene)
 
         args.add("-P", ctx.file._bazel_check_linked_script)
+        args.add("-P", ctx.file.enable_cycles_devices_script)
 
         for python_script in ctx.files.python_scripts:
             args.add("--python", python_script)
@@ -258,6 +259,10 @@ blender_render = rule(
         ),
         "_bazel_check_linked_script": attr.label(
             default = Label("@rules_blender//rules_blender_scripts:bazel_check_linked.py"),
+            allow_single_file = True,
+        ),
+        "enable_cycles_devices_script": attr.label(
+            default = Label("@blender//:enable_cycles_devices.py"),
             allow_single_file = True,
         ),
     },
