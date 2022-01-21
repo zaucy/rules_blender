@@ -113,6 +113,7 @@ def handle_work_request():
 
   sys.argv = base_argv.copy()
   sys.argv.append(args.blend_file)
+  sys.argv.append("--enable-autoexec")
   sys.argv.append('--')
   sys.argv.extend(extra_args)
 
@@ -121,7 +122,7 @@ def handle_work_request():
     execfile(python_script)
 
   if args.scene:
-    bpy.context.screen.scene = bpy.data.scenes[args.scene]
+    bpy.context.window.scene = bpy.data.scenes[args.scene]
 
   if args.render_format:
     bpy.context.scene.render.image_settings.file_format = args.render_format
@@ -159,7 +160,11 @@ def wait_for_work_request():
   current_request = BazelWorkRequest(json.loads(sys.stdin.readline()))
   print("Received work request (id=%s)" % current_request.request_id, file=debuglog)
   current_response = BazelWorkResponse(current_request)
-  handle_work_request()
+  try:
+    handle_work_request()
+  except Exception as err:
+    current_response.output = traceback.format_exc()
+    current_response.write()
 
 persistent_worker = False
 one_shot_args = []

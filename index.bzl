@@ -49,8 +49,6 @@ def _blender_render(ctx):
     batch_render = ctx.attr.batch_render
     outext = _render_format_extensions[ctx.attr.render_format]
 
-    blender_render_inputs_file = ctx.actions.declare_file("{}_input_files".format(ctx.attr.name))
-
     if batch_render == 0:
         batch_render = (frame_end+1) - frame_start
 
@@ -69,10 +67,6 @@ def _blender_render(ctx):
     for python_script in ctx.files.python_scripts:
         inputs.append(python_script)
 
-    ctx.actions.write(blender_render_inputs_file, "\n".join([input.path for input in inputs]))
-
-    inputs.append(blender_render_inputs_file)
-
     for batch_num in range(0, batch_count):
         batch_frame_start = frame_start + (batch_num * batch_render)
         batch_frame_end = batch_frame_start + batch_render - 1
@@ -88,7 +82,6 @@ def _blender_render(ctx):
             args.add("-S", ctx.attr.scene)
 
         args.add("-P", ctx.file.enable_cycles_devices_script)
-        args.add("-P", ctx.file._bazel_check_linked_script)
 
         for python_script in ctx.files.python_scripts:
             args.add("-P", python_script)
@@ -152,28 +145,18 @@ def _blender_render(ctx):
         ctx.actions.write(args_file, args)
         inputs.append(args_file)
 
-        # worker_args = ctx.actions.args()
-        # worker_args.add("--background")
-        # worker_args.add("--factory-startup")
-        # worker_args.add("-noaudio")
-        # worker_args.add("--enable-autoexec")
-        # worker_args.add("-P", ctx.file._bazel_blender_render_worker)
-        # worker_args.add("--")
-        # worker_args.add("--worker")
+        worker_args = ctx.actions.args()
+        worker_args.add("--background")
+        worker_args.add("--factory-startup")
+        worker_args.add("-noaudio")
+        worker_args.add("--enable-autoexec")
+        worker_args.add("-P", ctx.file._bazel_blender_render_worker)
+        worker_args.add("--")
+        worker_args.add("--worker")
 
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
-            # arguments = [worker_args, "@%s" % args_file.path],
-            arguments = [
-                "--background",
-                "--factory-startup",
-                "-noaudio",
-                "--enable-autoexec",
-                "-P", ctx.file._bazel_blender_render_worker.path,
-                "--",
-                "--worker",
-                "@%s" % args_file.path,
-            ],
+            arguments = [worker_args, "@%s" % args_file.path],
             inputs = inputs,
             outputs = batch_outputs,
             mnemonic = "BlenderRender",
@@ -183,9 +166,7 @@ def _blender_render(ctx):
                 "supports-multiplex-workers": "1",
                 "supports-worker-cancellation": "1",
                 "requires-worker-protocol" : "json",
-            },
-            env = {
-                "BAZEL_BLENDER_RENDER_INPUTS": blender_render_inputs_file.path,
+                "worker-key-mnemonic": "BlenderRender",
             },
         )
 
