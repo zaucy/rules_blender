@@ -87,6 +87,7 @@ def _blender_render(ctx):
         if ctx.attr.scene:
             args.add("-S", ctx.attr.scene)
 
+        args.add("-P", ctx.file.enable_cycles_devices_script)
         args.add("-P", ctx.file._bazel_check_linked_script)
 
         for python_script in ctx.files.python_scripts:
@@ -156,7 +157,6 @@ def _blender_render(ctx):
         worker_args.add("--factory-startup")
         worker_args.add("-noaudio")
         worker_args.add("--enable-autoexec")
-        worker_args.add("-P", ctx.file.enable_cycles_devices_script)
         worker_args.add("-P", ctx.file._bazel_blender_render_worker)
         worker_args.add("--")
         worker_args.add("--worker")

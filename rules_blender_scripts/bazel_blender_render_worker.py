@@ -5,7 +5,8 @@ import os
 import argparse
 
 def handle_except(type, value, traceback):
-  print("[%s] %s" % (type, value))
+  errlog = open("blender_render_worker_error.log")
+  print("[%s] %s" % (type, value), file=errlog)
 
 sys.excepthook = handle_except
 
@@ -20,7 +21,7 @@ parser.add_argument("-x", type=bool, dest="use_extension")
 parser.add_argument("-f", type=int, dest="render_frame")
 parser.add_argument("-s", type=int, dest="frame_start")
 parser.add_argument("-e", type=int, dest="frame_end")
-parser.add_argument("-a", type=bool, dest="render_anim", default=False)
+parser.add_argument("-a", dest="render_anim", default=False, action="store_true")
 parser.add_argument("-E", metavar="engine", dest="engine")
 parser.add_argument("-F", metavar="format", dest="render_format", choices=['TGA', 'RAWTGA', 'JPEG', 'IRIS', 'IRIZ', 'AVIRAW', 'AVIJPEG', 'PNG', 'BMP'])
 parser.add_argument("-S", metavar="ExampleScene", dest="scene")
@@ -101,14 +102,34 @@ def handle_work_request():
     execfile(python_script)
 
   if args.scene:
-    bpy.context.screen.scene=bpy.data.scenes[args.scene]
+    bpy.context.screen.scene = bpy.data.scenes[args.scene]
+
+  if args.render_format:
+    bpy.context.scene.render.image_settings.file_format = args.render_format
+
+  if args.render_frame is not None:
+    bpy.context.scene.frame_start = args.render_frame
+    bpy.context.scene.frame_end = args.render_frame
+
+  if args.frame_start is not None:
+    bpy.context.scene.frame_start = args.frame_start
+
+  if args.frame_end is not None:
+    bpy.context.scene.frame_end = args.frame_end
 
   if args.render_output:
+    args.render_output = args.render_output.strip('\'\"')
     bpy.context.scene.render.filepath = os.path.abspath(args.render_output)
+    if bpy.context.scene.frame_start == bpy.context.scene.frame_end:
+      bpy.context.scene.render.filepath = bpy.context.scene.render.frame_path(frame=bpy.context.scene.frame_start)
 
   # Response will be written
   print("Render start...")
-  bpy.ops.render.render(animation = args.render_anim)
+  bpy.ops.render.render(
+    animation = args.render_anim,
+    write_still = not args.render_anim,
+  )
+
   print("Render end...")
 
 def wait_for_work_request():
