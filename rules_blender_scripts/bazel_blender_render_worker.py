@@ -5,9 +5,13 @@ import os
 import argparse
 import traceback
 
-debuglog = open("blender_render_worker.log", "w")
+startup_blend_file = bpy.data.filepath
 current_request = None
 current_response = None
+
+def debug_log(msg):
+  if current_request is not None and current_request.verbosity > 0:
+    print(msg)
 
 def handle_except(type, value, _):
   if current_response is not None:
@@ -78,7 +82,7 @@ class BazelWorkResponse:
       "requestId": self.request_id,
       "wasCancelled": self.was_cancelled,
     })
-    print("Writing work response: %s" % response_json, file=debuglog)
+    debug_log("Writing work response: %s" % response_json)
     print(response_json, file=sys.stderr)
 
 def execfile(filepath):
@@ -94,7 +98,7 @@ def handle_work_request():
   if current_request.cancel:
     current_response.was_cancelled = True
     current_response.write()
-    print("Quitting due to cancel request", file=debuglog)
+    debug_log("Quitting due to cancel request")
     bpy.ops.wm.quit_blender()
     return
 
@@ -107,18 +111,14 @@ def handle_work_request():
   except ValueError:
     args = parser.parse_args(current_request.arguments)
 
-  print("Opening blend file %s" % args.blend_file, file=debuglog)
+  debug_log("Opening blend file %s" % args.blend_file)
   bpy.ops.wm.open_mainfile(filepath=args.blend_file, use_scripts=True)
-  print("After opening %s" % args.blend_file, file=debuglog)
+  debug_log("After opening %s" % args.blend_file)
 
   sys.argv = base_argv.copy()
   sys.argv.append(args.blend_file)
   sys.argv.append('--')
   sys.argv.extend(extra_args)
-
-  for python_script in args.python_scripts:
-    print("Executing python script: %s" % python_script, file=debuglog)
-    execfile(python_script)
 
   if args.scene:
     bpy.context.window.scene = bpy.data.scenes[args.scene]
@@ -141,6 +141,10 @@ def handle_work_request():
     bpy.context.scene.render.filepath = os.path.abspath(args.render_output)
     if bpy.context.scene.frame_start == bpy.context.scene.frame_end:
       bpy.context.scene.render.filepath = bpy.context.scene.render.frame_path(frame=bpy.context.scene.frame_start)
+
+  for python_script in args.python_scripts:
+    debug_log("Executing python script: %s" % python_script)
+    execfile(python_script)
 
   # Request inputs may be 0 for a one shot. In that case we'll skip the inputs
   # validation. This may need to be changed in the future.
@@ -165,21 +169,23 @@ def handle_work_request():
         current_response.write()
         return
 
-  print("Render start...", file=debuglog)
+  debug_log("Render start...")
   bpy.ops.render.render(
     animation = args.render_anim,
     write_still = not args.render_anim,
   )
 
-  print("Render end...", file=debuglog)
+  debug_log("Render end...")
 
 def wait_for_work_request():
   global current_request
   global current_response
-
-  print("Waiting for work request...", file=debuglog)
+  
+  debug_log("Opening empty blend file before waiting for work request...")
+  bpy.ops.wm.read_homefile(use_empty=True, use_factory_startup=True)
+  debug_log("Waiting for work request...")
   current_request = BazelWorkRequest(json.loads(sys.stdin.readline()))
-  print("Received work request (id=%s)" % current_request.request_id, file=debuglog)
+  debug_log("Received work request (id=%s)" % current_request.request_id)
   current_response = BazelWorkResponse(current_request)
   try:
     handle_work_request()
@@ -197,12 +203,12 @@ for arg in sys.argv:
 
 @bpy.app.handlers.persistent
 def render_complete_handler(unused0, unused1):
-  print("Render Complete!", file=debuglog)
+  debug_log("Render Complete!")
   current_response.write()
   if persistent_worker:
     wait_for_work_request()
   else:
-    print("One shot done", file=debuglog)
+    debug_log("One shot done")
     bpy.ops.wm.quit_blender()
 
 bpy.app.handlers.render_complete.append(render_complete_handler)
@@ -211,7 +217,6 @@ bpy.app.handlers.render_complete.append(render_complete_handler)
 if persistent_worker:
   wait_for_work_request()
 else:
-  print("Doing one shot request...", file=debuglog)
   current_request = BazelWorkRequest({
     "arguments": one_shot_args,
     "requestId": 0,
@@ -219,5 +224,6 @@ else:
     "verbosity": 0,
     "inputs": [],
   })
+  debug_log("Doing one shot request...")
   current_response = BazelWorkResponse(current_request)
   handle_work_request()
