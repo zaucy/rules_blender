@@ -4,6 +4,7 @@ import json
 import os
 import argparse
 import traceback
+import builtins
 
 startup_blend_file = bpy.data.filepath
 current_request = None
@@ -92,7 +93,8 @@ def execfile(filepath):
     "__name__": "__main__",
   }
   with open(filepath, 'rb') as file:
-    exec(compile(file.read(), filepath, 'exec'), global_namespace)
+    # importing builtins because blender re.compile gets conflicted here
+    exec(builtins.compile(file.read(), filepath, 'exec'), global_namespace)
 
 def handle_work_request():
   if current_request.cancel:
