@@ -604,9 +604,9 @@ def _blender_repository(rctx):
             _download_and_extract_dmg(rctx, archive, blender_version)
         else:
             if os_key == "windows64":
-                blender_executable_path = rctx.path(blender_version + "/blender.exe")
+                blender_executable_path = str(rctx.path(blender_version + "/blender.exe"))
             elif os_key == "linux64":
-                blender_executable_path = rctx.path(blender_version + "/blender")
+                blender_executable_path = str(rctx.path(blender_version + "/blender"))
             rctx.download_and_extract(archive.urls, output = blender_version, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
     elif blender_version == "system":
         fail("blender_version was set to 'system', but no system installation of blender was found. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
