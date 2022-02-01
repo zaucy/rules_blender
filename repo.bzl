@@ -619,7 +619,10 @@ def _blender_repository(rctx):
     ])
 
     if check_gpus_result.return_code != 0:
-        fail("check_gpus.py exited with code {}".format(check_gpus_result.return_code))
+        fail("check_gpus.py exited with code {}\n{}".format(
+            check_gpus_result.return_code,
+            check_gpus_result.stdout + check_gpus_result.stderr,
+        ))
 
     enabled_devices = []
 
