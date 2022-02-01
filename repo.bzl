@@ -632,7 +632,7 @@ def _blender_repository(rctx):
 
     enabled_devices = []
 
-    blender_env_info = json.decode(check_gpus_result.stdout)
+    blender_env_info = json.decode(check_gpus_result.stderr)
 
     cycles_device_types = rctx.attr.cycles_device_types
 
