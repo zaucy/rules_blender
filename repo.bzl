@@ -185,6 +185,23 @@ _platform_build_file_contents = {
 }
 
 _known_blender_archives = {
+    "3.0.1": {
+        "windows64": struct(
+            strip_prefix = "blender-3.0.1-windows-x64",
+            urls = ["{}/Blender3.0/blender-3.0.1-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            sha256 = "e456894573781d16755168a2c492350035680f51ee1664c666b6a5b40204848b",
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-3.0.1-linux-x64",
+            urls = ["{}/Blender3.0/blender-3.0.1-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            sha256 = "4f17aa3d10ed6e13e6a75479f1a506f58998b8c007812a0886d9254c953e2ae5",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.0/blender-3.0.1-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "02d81971fdd4e13cc197acf363889e04a33d32b8ecfee77169fb392c25c87a16",
+        ),
+    },
     "3.0.0": {
         "windows64": struct(
             strip_prefix = "blender-3.0.0-windows-x64",
@@ -586,6 +603,13 @@ def _blender_repository(rctx):
                 blender_version = sys_blender_version
             if sys_blender_version != blender_version and only_system_installed_blender:
                 fail("Expected system installed blender version '{}', but instead got '{}'".format(blender_version, sys_blender_version))
+            elif sys_blender_version != blender_version:
+                # buildifier: disable=print
+                print("System blender installation found with version {sys_blender_version}, but blender_repository requires version {blender_version}.".format(
+                    sys_blender_version = sys_blender_version,
+                    blender_version = blender_version,
+                ))
+                blender_path = None
     elif blender_path == None and only_system_installed_blender:
         fail("Attribute only_system_installed_blender is set to True, but cannot find system installed blender. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
 
@@ -669,7 +693,7 @@ blender_repository = repository_rule(
     attrs = {
         "only_system_installed_blender": attr.bool(),
         "blender_version": attr.string(
-            default = "3.0.0",
+            default = "3.0.1",
             values = _known_blender_archives.keys() + ["system"],
             doc = "Blender version. Used to download blender archive.",
         ),
