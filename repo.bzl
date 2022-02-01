@@ -644,6 +644,7 @@ def _blender_repository(rctx):
     rctx.file("check_gpus.py", _find_blender_gpus_script)
     check_gpus_result = rctx.execute([
         blender_executable_path,
+        "--log-level", "0",
         "-b",
         "-P", rctx.path("check_gpus.py")
     ])
