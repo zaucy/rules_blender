@@ -19,3 +19,7 @@ build --enable_runfiles
 query --enable_runfiles
 build --nolegacy_external_runfiles
 query --nolegacy_external_runfiles
+build --experimental_worker_allow_json_protocol
+build --experimental_worker_cancellation
+
+try-import %workspace%/user.bazelrc

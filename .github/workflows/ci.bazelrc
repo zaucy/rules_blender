@@ -11,3 +11,8 @@ build --disk_cache=$HOME/.cache/bazel
 build --repository_cache=$HOME/.cache/bazel-repo
 # Allows tests to run bazelisk-in-bazel, since this is the cache folder used
 test --test_env=XDG_CACHE_HOME
+
+build --noexperimental_worker_multiplex
+build --experimental_worker_allow_json_protocol
+build --experimental_worker_cancellation
+build --strategy=BlenderRender=local

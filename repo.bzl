@@ -2,6 +2,7 @@ _windows_build_file_content = """
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
 exports_files(["{BLENDER_VERSION}/blender.exe"])
+exports_files(["enable_cycles_devices.py"])
 
 native_binary(
     name = "blender",
@@ -15,6 +16,8 @@ native_binary(
 _windows_sys_build_file_content = """
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
+exports_files(["enable_cycles_devices.py"])
+
 native_binary(
     name = "blender",
     visibility = ["//visibility:public"],
@@ -25,6 +28,7 @@ native_binary(
 
 _macos_build_file_content = """
 exports_files(["{BLENDER_VERSION}/Blender.app/Contents/MacOS/Blender"])
+exports_files(["enable_cycles_devices.py"])
 
 sh_binary(
     name = "blender",
@@ -37,6 +41,7 @@ sh_binary(
 
 _build_file_content = """
 exports_files(["{BLENDER_VERSION}/blender"])
+exports_files(["enable_cycles_devices.py"])
 
 sh_binary(
     name = "blender",
@@ -48,6 +53,8 @@ sh_binary(
 """
 
 _sys_build_file_content = """
+exports_files(["enable_cycles_devices.py"])
+
 sh_binary(
     name = "blender",
     visibility = ["//visibility:public"],
@@ -92,6 +99,10 @@ if /I "%arg%"=="--quiet" (
     set QUIET_OUTPUT=1
     shift & goto :args_loop
 )
+if /I "%arg%"=="--worker" (
+    set QUIET_OUTPUT=2
+    shift & goto :args_loop
+)
 if /I "%PREFIX_CD%"=="1" (
     set PREFIX_CD=0
     set arg=%cd%/%arg%
@@ -104,8 +115,9 @@ shift & goto :args_loop
 
 :start_blender
 
-if %QUIET_OUTPUT%==1 "%BLENDER_EXECUTABLE%" %args% > NUL
-if %QUIET_OUTPUT%==0 "%BLENDER_EXECUTABLE%" %args%
+if %QUIET_OUTPUT%==2 "%BLENDER_EXECUTABLE%" %args% 3>&2 2>&1 1>&3
+if %QUIET_OUTPUT%==1 "%BLENDER_EXECUTABLE%" %args% 1>nul
+if %QUIET_OUTPUT%==0 "%BLENDER_EXECUTABLE%" %args% 3>&2 2>&1 1>&3
 """
 
 _blender_wrapper_sh = """#!/bin/bash
@@ -129,16 +141,22 @@ PREFIX_CD=0
 for arg do
     shift
     [ "$arg" = "--quiet" ] && QUIET_OUTPUT=1 && continue
+    [ "$arg" = "--worker" ] && QUIET_OUTPUT=2 && continue
     [ "$PREFIX_CD" = "1" ] && PREFIX_CD=0 && arg=$(pwd)/$arg
     [ "$arg" = "-o" ] && PREFIX_CD=1
     set -- "$@" "$arg"
 done
 
+if [ "$QUIET_OUTPUT" = "2" ]
+then
+    $BLENDER_EXECUTABLE "$@" 2>&1 1>/dev/null
+fi
+
 if [ "$QUIET_OUTPUT" = "1" ]
 then
-    $BLENDER_EXECUTABLE "$@" > /dev/null
+    $BLENDER_EXECUTABLE "$@" 1>/dev/null
 else
-    $BLENDER_EXECUTABLE "$@"
+    $BLENDER_EXECUTABLE "$@" 3>&2 2>&1 1>&3
 fi
 """
 
@@ -167,6 +185,23 @@ _platform_build_file_contents = {
 }
 
 _known_blender_archives = {
+    "3.0.1": {
+        "windows64": struct(
+            strip_prefix = "blender-3.0.1-windows-x64",
+            urls = ["{}/Blender3.0/blender-3.0.1-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            sha256 = "e456894573781d16755168a2c492350035680f51ee1664c666b6a5b40204848b",
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-3.0.1-linux-x64",
+            urls = ["{}/Blender3.0/blender-3.0.1-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            sha256 = "4f17aa3d10ed6e13e6a75479f1a506f58998b8c007812a0886d9254c953e2ae5",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.0/blender-3.0.1-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "02d81971fdd4e13cc197acf363889e04a33d32b8ecfee77169fb392c25c87a16",
+        ),
+    },
     "3.0.0": {
         "windows64": struct(
             strip_prefix = "blender-3.0.0-windows-x64",
@@ -524,6 +559,33 @@ def _download_and_extract_dmg(rctx, archive, blender_version):
     if hdiutil_detach_result.return_code != 0:
         fail("Failed to detach blender image")
 
+_find_blender_gpus_script = """
+import bpy
+import sys
+import json
+
+def print_blender_env_info():
+    preferences = bpy.context.preferences
+    cycles_preferences = preferences.addons["cycles"].preferences
+    cycles_preferences.get_devices()
+
+    devices = []
+    for device in cycles_preferences.devices:
+        devices.append({"name": device.name, "type": device.type})
+    
+    json.dump({"devices": devices}, sys.stderr)
+
+print_blender_env_info()
+"""
+
+_enable_cycles_devices_py = """
+import bpy
+
+cycles_preferences = bpy.context.preferences.addons["cycles"].preferences
+cycles_preferences.get_devices()
+for device in cycles_preferences.devices:
+"""
+
 def _blender_repository(rctx):
     blender_version = str(rctx.attr.blender_version)
     only_system_installed_blender = rctx.attr.only_system_installed_blender
@@ -541,37 +603,105 @@ def _blender_repository(rctx):
                 blender_version = sys_blender_version
             if sys_blender_version != blender_version and only_system_installed_blender:
                 fail("Expected system installed blender version '{}', but instead got '{}'".format(blender_version, sys_blender_version))
+            elif sys_blender_version != blender_version:
+                # buildifier: disable=print
+                print("System blender installation found with version {sys_blender_version}, but blender_repository requires version {blender_version}.".format(
+                    sys_blender_version = sys_blender_version,
+                    blender_version = blender_version,
+                ))
+                blender_path = None
     elif blender_path == None and only_system_installed_blender:
         fail("Attribute only_system_installed_blender is set to True, but cannot find system installed blender. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
 
     build_file_contents = _get_platform_build_file_contents(rctx)
     archive = _get_blender_archive(rctx, blender_version)
     blender_executable_path = ""
+    os_key = _os_key(rctx.os)
 
     if blender_path != None:
         blender_executable_path = str(blender_path)
         rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
     elif blender_version != "system":
         rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
-        if rctx.os.name.find("mac") != -1:
+        if os_key == "macos":
             blender_executable_path = str(rctx.path(blender_version + "/Blender.app/Contents/MacOS/Blender"))
             _download_and_extract_dmg(rctx, archive, blender_version)
         else:
+            if os_key == "windows64":
+                blender_executable_path = str(rctx.path(blender_version + "/blender.exe"))
+            elif os_key == "linux64":
+                blender_executable_path = str(rctx.path(blender_version + "/blender"))
             rctx.download_and_extract(archive.urls, output = blender_version, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
     elif blender_version == "system":
         fail("blender_version was set to 'system', but no system installation of blender was found. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
 
     rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path.replace("/", "\\")), executable = True)
     rctx.file("blender_wrapper.bash", _blender_wrapper_sh.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path), executable = True)
+    
+    if blender_executable_path == None:
+        fail("Missing blender executable path. Cannot check for render devices.")
+
+    rctx.file("check_gpus.py", _find_blender_gpus_script)
+    check_gpus_result = rctx.execute([
+        blender_executable_path,
+        "--log-level", "0",
+        "-noaudio",
+        "-b",
+        "-P", rctx.path("check_gpus.py")
+    ])
+
+    if check_gpus_result.return_code != 0:
+        fail("check_gpus.py exited with code {}\n{}".format(
+            check_gpus_result.return_code,
+            check_gpus_result.stdout + check_gpus_result.stderr,
+        ))
+
+    if not check_gpus_result.stderr.startswith("{"):
+        fail("Unexpected stderr content (expected json): " + check_gpus_result.stderr)
+
+    enabled_devices = []
+
+    blender_env_info = json.decode(check_gpus_result.stderr)
+
+    cycles_device_types = rctx.attr.cycles_device_types
+
+    if len(cycles_device_types) == 0 and "RULES_BLENDER_CYCLES_DEVICE_TYPES" in rctx.os.environ:
+        cycles_device_types = rctx.os.environ["RULES_BLENDER_CYCLES_DEVICE_TYPES"].split(",")
+
+    if len(cycles_device_types) > 0:
+        for cycles_device_type in cycles_device_types:
+            for device in blender_env_info["devices"]:
+                if cycles_device_type == device["type"]:
+                    enabled_devices.append(device)
+        
+        if len(enabled_devices) == 0:
+            devices_str = ""
+            for device in blender_env_info["devices"]:
+                devices_str += "\t({})\t\t{}\n".format(device["type"], device["name"])
+            fail("blender_repository attr cycles_device_types was set, but no matching device types were found.\nAvailable device options are the following:\n{}".format(devices_str))
+        
+        enable_cycles_devices_py = _enable_cycles_devices_py
+
+        for device in enabled_devices:
+            enable_cycles_devices_py += "\n".join([
+                "\tif device.name == \"%s\" and device.type == \"%s\":" % (device["name"], device["type"]),
+                "\t\tdevice.use = True",
+                "\t\tcycles_preferences.compute_device_type = device.type",
+            ])
+
+        rctx.file("enable_cycles_devices.py", enable_cycles_devices_py)
+    else:
+        rctx.file("enable_cycles_devices.py", "")
 
 blender_repository = repository_rule(
     implementation = _blender_repository,
     attrs = {
         "only_system_installed_blender": attr.bool(),
         "blender_version": attr.string(
-            default = "3.0.0",
+            default = "3.0.1",
             values = _known_blender_archives.keys() + ["system"],
             doc = "Blender version. Used to download blender archive.",
-        )
+        ),
+        "cycles_device_types": attr.string_list(),
     },
 )

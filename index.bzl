@@ -49,8 +49,6 @@ def _blender_render(ctx):
     batch_render = ctx.attr.batch_render
     outext = _render_format_extensions[ctx.attr.render_format]
 
-    blender_render_inputs_file = ctx.actions.declare_file("{}_input_files".format(ctx.attr.name))
-
     if batch_render == 0:
         batch_render = (frame_end+1) - frame_start
 
@@ -69,10 +67,6 @@ def _blender_render(ctx):
     for python_script in ctx.files.python_scripts:
         inputs.append(python_script)
 
-    ctx.actions.write(blender_render_inputs_file, "\n".join([input.path for input in inputs]))
-
-    inputs.append(blender_render_inputs_file)
-
     for batch_num in range(0, batch_count):
         batch_frame_start = frame_start + (batch_num * batch_render)
         batch_frame_end = batch_frame_start + batch_render - 1
@@ -82,28 +76,19 @@ def _blender_render(ctx):
             batch_frame_end = frame_end
 
         args = ctx.actions.args()
-        args.add("--log-level", "0")
-        args.add("--background")
-        args.add("-noaudio")
-
-        if ctx.attr.factory_startup:
-            args.add("--factory-startup")
-
-        if batch_render == 1:
-            args.add("--threads", "1")
         args.add(ctx.file.blend_file)
 
         if ctx.attr.scene:
-            args.add("--scene", ctx.attr.scene)
+            args.add("-S", ctx.attr.scene)
 
-        args.add("-P", ctx.file._bazel_check_linked_script)
+        args.add("-P", ctx.file.enable_cycles_devices_script)
 
         for python_script in ctx.files.python_scripts:
-            args.add("--python", python_script)
+            args.add("-P", python_script)
 
         if batch_frame_start != batch_frame_end:
-            args.add("--frame-start", batch_frame_start)
-            args.add("--frame-end", batch_frame_end)
+            args.add("-s", batch_frame_start)
+            args.add("-e", batch_frame_end)
 
         for frame_num in range(batch_frame_start, batch_frame_end + 1):
             frame_str = str(frame_num)
@@ -119,21 +104,16 @@ def _blender_render(ctx):
         args.add("-x", "1")
 
         if ctx.attr.render_engine != "UNSET":
-            args.add("--engine", ctx.attr.render_engine)
+            args.add("-E", ctx.attr.render_engine)
 
-        args.add("--render-format", ctx.attr.render_format)
+        args.add("-F", ctx.attr.render_format)
 
         if batch_frame_start != batch_frame_end:
-            args.add("--frame-start", batch_frame_start)
-            args.add("--frame-end", batch_frame_end)
-            args.add("--render-anim")
+            args.add("-s", batch_frame_start)
+            args.add("-e", batch_frame_end)
+            args.add("-a")
         else:
-            args.add("--render-frame", batch_frame_start)
-
-        if ctx.attr.autoexec_scripts:
-            args.add("--enable-autoexec")
-        else:
-            args.add("--disable-autoexec")
+            args.add("-f", batch_frame_start)
 
         if len(ctx.attr.python_script_args) > 0:
             args.add("--")
@@ -161,15 +141,33 @@ def _blender_render(ctx):
             # remove trailing ", "
             progress_message = progress_message[:-2] + ")"
 
+        args_file = ctx.actions.declare_file("{}_args_file_batch_{}".format(ctx.label.name, batch_num))
+        ctx.actions.write(args_file, args)
+        inputs.append(args_file)
+
+        worker_args = ctx.actions.args()
+        worker_args.add("--log-level", "0")
+        worker_args.add("--background")
+        worker_args.add("--factory-startup")
+        worker_args.add("-noaudio")
+        worker_args.add("--enable-autoexec")
+        worker_args.add("-P", ctx.file._bazel_blender_render_worker)
+        worker_args.add("--")
+        worker_args.add("--worker")
+
         ctx.actions.run(
             executable = ctx.executable.blender_executable,
-            arguments = [args, "--quiet"],
+            arguments = [worker_args, "@%s" % args_file.path],
             inputs = inputs,
             outputs = batch_outputs,
             mnemonic = "BlenderRender",
             progress_message = progress_message,
-            env = {
-                "BAZEL_BLENDER_RENDER_INPUTS": blender_render_inputs_file.path,
+            execution_requirements = {
+                "supports-workers" : "1",
+                "supports-multiplex-workers": "1",
+                "supports-worker-cancellation": "1",
+                "requires-worker-protocol" : "json",
+                "worker-key-mnemonic": "BlenderRender",
             },
         )
 
@@ -227,10 +225,6 @@ blender_render = rule(
             doc = "End frame in animation",
             mandatory = True,
         ),
-        "autoexec_scripts": attr.bool(
-            doc = "Enable automatic Python script execution",
-            default = False,
-        ),
         "python_scripts": attr.label_list(
             doc = "Python scripts to run right before render begins",
             mandatory = False,
@@ -246,18 +240,18 @@ blender_render = rule(
             mandatory = False,
             providers = [BlenderLibraryInfo],
         ),
-        "factory_startup": attr.bool(
-            doc = "Pass --factory-startup to blender. It is not recommended to set this to `False` since blender will access the machines HOME directory potentially breaking the render.",
-            default = True,
-        ),
         "blender_executable": attr.label(
             doc = "Blender executable to use for the render.",
             default = Label("@blender//:blender"),
             executable = True,
             cfg = "host",
         ),
-        "_bazel_check_linked_script": attr.label(
-            default = Label("@rules_blender//rules_blender_scripts:bazel_check_linked.py"),
+        "_bazel_blender_render_worker": attr.label(
+            default = Label("@rules_blender//rules_blender_scripts:bazel_blender_render_worker.py"),
+            allow_single_file = True,
+        ),
+        "enable_cycles_devices_script": attr.label(
+            default = Label("@blender//:enable_cycles_devices.py"),
             allow_single_file = True,
         ),
     },
