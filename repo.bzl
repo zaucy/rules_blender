@@ -623,7 +623,7 @@ def _blender_repository(rctx):
         rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
     elif blender_version != "system":
         rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
-        if os_key == "mac":
+        if os_key == "macos":
             blender_executable_path = str(rctx.path(blender_version + "/Blender.app/Contents/MacOS/Blender"))
             _download_and_extract_dmg(rctx, archive, blender_version)
         else:
