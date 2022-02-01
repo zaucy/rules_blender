@@ -608,12 +608,13 @@ def _blender_repository(rctx):
 
     rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path.replace("/", "\\")), executable = True)
     rctx.file("blender_wrapper.bash", _blender_wrapper_sh.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path), executable = True)
-
-    blender_wrapper = "blender_wrapper.cmd" if _os_key(rctx.os) == "windows64" else "blender_wrapper.bash"
+    
+    if blender_executable_path == None:
+        fail("Missing blender executable path. Cannot check for render devices.")
 
     rctx.file("check_gpus.py", _find_blender_gpus_script)
     check_gpus_result = rctx.execute([
-        rctx.path(blender_wrapper),
+        blender_executable_path,
         "-b",
         "-P", rctx.path("check_gpus.py")
     ])
