@@ -617,7 +617,10 @@ def _blender_repository(rctx):
         "-b",
         "-P", rctx.path("check_gpus.py")
     ])
-    
+
+    if check_gpus_result.return_code != 0:
+        fail("check_gpus.py exited with code {}".format(check_gpus_result.return_code))
+
     enabled_devices = []
 
     blender_env_info = json.decode(check_gpus_result.stdout)
