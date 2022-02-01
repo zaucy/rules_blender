@@ -6,7 +6,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 env:
-  USE_BAZEL_VERSION: 5.0.0-pre.20211011.2
+  USE_BAZEL_VERSION: '5.0.0'
 jobs:
   test-linux:
     runs-on: ubuntu-20.04
