@@ -592,16 +592,21 @@ def _blender_repository(rctx):
     build_file_contents = _get_platform_build_file_contents(rctx)
     archive = _get_blender_archive(rctx, blender_version)
     blender_executable_path = ""
+    os_key = _os_key(rctx.os)
 
     if blender_path != None:
         blender_executable_path = str(blender_path)
         rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
     elif blender_version != "system":
         rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
-        if rctx.os.name.find("mac") != -1:
+        if os_key == "mac":
             blender_executable_path = str(rctx.path(blender_version + "/Blender.app/Contents/MacOS/Blender"))
             _download_and_extract_dmg(rctx, archive, blender_version)
         else:
+            if os_key == "windows64":
+                blender_executable_path = rctx.path(blender_version + "/blender.exe")
+            elif os_key == "linux64":
+                blender_executable_path = rctx.path(blender_version + "/blender")
             rctx.download_and_extract(archive.urls, output = blender_version, stripPrefix = archive.strip_prefix, sha256 = archive.sha256)
     elif blender_version == "system":
         fail("blender_version was set to 'system', but no system installation of blender was found. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
