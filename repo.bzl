@@ -654,6 +654,9 @@ def _blender_repository(rctx):
             check_gpus_result.stdout + check_gpus_result.stderr,
         ))
 
+    if not check_gpus_result.stderr.startswith("{"):
+        fail("Unexpected stderr content (expected json): " + check_gpus_result.stderr)
+
     enabled_devices = []
 
     blender_env_info = json.decode(check_gpus_result.stderr)
