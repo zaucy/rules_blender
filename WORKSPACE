@@ -16,8 +16,8 @@ bzlws_deps()
 git_repository(
     name = "io_bazel_stardoc",
     remote = "https://github.com/bazelbuild/stardoc.git",
-    commit = "247c2097e7346778ac8d03de5a4770d6b9890dc5",
-    shallow_since = "1600270745 -0400",
+    commit = "f4d4b3a965c9ae36feeff5eb3171d6ba17406b84",
+    shallow_since = "1636567136 -0500",
 )
 
 load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
