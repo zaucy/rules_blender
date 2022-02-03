@@ -131,6 +131,7 @@ def handle_work_request():
   if args.render_frame is not None:
     bpy.context.scene.frame_start = args.render_frame
     bpy.context.scene.frame_end = args.render_frame
+    bpy.context.scene.frame_set(args.render_frame)
 
   if args.frame_start is not None:
     bpy.context.scene.frame_start = args.frame_start
