@@ -168,7 +168,7 @@ def handle_work_request():
         current_response.output += "\nChecked these paths:\n"
         for req_input in current_request.inputs:
           req_input_path = os.path.abspath(req_input.path)
-          current_response.output += " - " + req_input_path
+          current_response.output += " - " + req_input_path + "\n"
         current_response.write()
         return
 
