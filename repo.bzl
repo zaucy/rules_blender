@@ -185,6 +185,23 @@ _platform_build_file_contents = {
 }
 
 _known_blender_archives = {
+    "3.1.2": {
+        "windows64": struct(
+            strip_prefix = "blender-3.1.2-windows-x64",
+            urls = ["{}/Blender3.0/blender-3.1.2-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            sha256 = "",
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-3.1.2-linux-x64",
+            urls = ["{}/Blender3.0/blender-3.1.2-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            sha256 = "",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.1/blender-3.1.2-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "",
+        ),
+    },
     "3.0.1": {
         "windows64": struct(
             strip_prefix = "blender-3.0.1-windows-x64",
@@ -698,7 +715,7 @@ blender_repository = repository_rule(
     attrs = {
         "only_system_installed_blender": attr.bool(),
         "blender_version": attr.string(
-            default = "3.0.1",
+            default = "3.1.2",
             values = _known_blender_archives.keys() + ["system"],
             doc = "Blender version. Used to download blender archive.",
         ),
