@@ -188,12 +188,12 @@ _known_blender_archives = {
     "3.1.2": {
         "windows64": struct(
             strip_prefix = "blender-3.1.2-windows-x64",
-            urls = ["{}/Blender3.0/blender-3.1.2-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            urls = ["{}/Blender3.1/blender-3.1.2-windows-x64.zip".format(mirror) for mirror in _mirrors],
             sha256 = "",
         ),
         "linux64": struct(
             strip_prefix = "blender-3.1.2-linux-x64",
-            urls = ["{}/Blender3.0/blender-3.1.2-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            urls = ["{}/Blender3.1/blender-3.1.2-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
             sha256 = "",
         ),
         "macos": struct(
