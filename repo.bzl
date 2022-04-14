@@ -189,17 +189,17 @@ _known_blender_archives = {
         "windows64": struct(
             strip_prefix = "blender-3.1.2-windows-x64",
             urls = ["{}/Blender3.1/blender-3.1.2-windows-x64.zip".format(mirror) for mirror in _mirrors],
-            sha256 = "1fe4edcff0a76cf477543732323349ce6f1564489fed7d5ac2f5081ede2fcef1",
+            sha256 = "eccd07ebd43e6a6e2a8236277d08a63d8ea78a4a2ebc4b10b6ca67418e0e966e",
         ),
         "linux64": struct(
             strip_prefix = "blender-3.1.2-linux-x64",
             urls = ["{}/Blender3.1/blender-3.1.2-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
-            sha256 = "adaa4650cf055273ee2cb6bbd2dead8b43a0f82f3d7ba871d4238e115a69f7e9",
+            sha256 = "c1d345b25c6f83708b2681d354d70a3e6023c04bb73cc7943366c0c19e542958",
         ),
         "macos": struct(
             strip_prefix = "",
             urls = ["{}/Blender3.1/blender-3.1.2-macos-x64.dmg".format(mirror) for mirror in _mirrors],
-            sha256 = "bdb1b505b76ad774f5fcb8cc2de2c6134777d05e5f2bdb19b4a45f75a065f871",
+            sha256 = "e5a075577a0ec24dcd11b269fc95684189b358802f61d611c376241497e47fdb",
         ),
     },
     "3.0.1": {
