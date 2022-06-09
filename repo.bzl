@@ -732,7 +732,7 @@ blender_repository = repository_rule(
     attrs = {
         "only_system_installed_blender": attr.bool(),
         "blender_version": attr.string(
-            default = "3.1.2",
+            default = "3.2.0",
             values = _known_blender_archives.keys() + ["system"],
             doc = "Blender version. Used to download blender archive.",
         ),
