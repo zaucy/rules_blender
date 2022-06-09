@@ -185,6 +185,23 @@ _platform_build_file_contents = {
 }
 
 _known_blender_archives = {
+    "3.2.0": {
+        "windows64": struct(
+            strip_prefix = "blender-3.2.0-windows-x64",
+            urls = ["{}/Blender3.2/blender-3.2.0-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            sha256 = "396b6905914041697de590ab07c1ed92d790b9d155902465932d49f04e339038",
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-3.2.0-linux-x64",
+            urls = ["{}/Blender3.2/blender-3.2.0-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            sha256 = "07c9380518ee1ee1ee3d5353e47bf105569cb2860f8bf45a35743b4f8cd6b742",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.2/blender-3.2.0-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "af3222a0782bbef0f10d77abf2e3bd458779266b9b5d5b527d0e3197ae0e8dca",
+        ),
+    },
     "3.1.2": {
         "windows64": struct(
             strip_prefix = "blender-3.1.2-windows-x64",
