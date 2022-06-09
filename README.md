@@ -22,11 +22,11 @@ http_archive(
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
+# Replace COMMIT with the latest commit hash from rules_blender main branch
 http_archive(
     name = "rules_blender",
-    strip_prefix = "rules_blender-3c7e4733c8714c47aba963233a1b3e62f88b511c",
-    urls = ["https://github.com/zaucy/rules_blender/archive/3c7e4733c8714c47aba963233a1b3e62f88b511c.zip"],
-    sha256 = "be6b2dd5e93057cdb3ece719deef37e74a029369598439ba348bd90fdda1b68a",
+    strip_prefix = "rules_blender-COMMIT",
+    urls = ["https://github.com/zaucy/rules_blender/archive/COMMIT.zip"],
 )
 
 load("@rules_blender//:repo.bzl", "blender_repository")
