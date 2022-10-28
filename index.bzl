@@ -132,6 +132,9 @@ def _blender_render(ctx):
             args.add("--")
             args.add_all(ctx.attr.python_script_args)
 
+        for view_layer in ctx.attr.view_layers:
+            args.add("--view_layer", view_layer)
+
         progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
 
         if ctx.attr.scene:
@@ -266,6 +269,10 @@ blender_render = rule(
         "enable_cycles_devices_script": attr.label(
             default = Label("@blender//:enable_cycles_devices.py"),
             allow_single_file = True,
+        ),
+        "view_layers": attr.string_list(
+            default = [],
+            allow_empty = True,
         ),
     },
 )

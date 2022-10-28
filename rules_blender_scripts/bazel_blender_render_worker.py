@@ -40,6 +40,7 @@ parser.add_argument("-a", dest="render_anim", default=False, action="store_true"
 parser.add_argument("-E", metavar="engine", dest="engine")
 parser.add_argument("-F", metavar="format", dest="render_format", choices=['TGA', 'RAWTGA', 'JPEG', 'IRIS', 'IRIZ', 'AVIRAW', 'AVIJPEG', 'PNG', 'BMP'])
 parser.add_argument("-S", metavar="ExampleScene", dest="scene")
+parser.add_argument("--view_layer", action='append', dest="view_layers")
 
 class BazelWorkInput:
   def __init__(self, work_request_input_json):
@@ -151,6 +152,19 @@ def handle_work_request():
     bpy.context.scene.render.use_file_extension = True
   else:
     bpy.context.scene.render.use_file_extension = False
+
+  if len(args.view_layers) > 0:
+    for view_layer in bpy.context.scene.view_layers:
+      print(view_layer)
+      view_layer.use = False
+    for view_layer_name in args.view_layers:
+      if not view_layer_name in bpy.context.scene.view_layers:
+        current_response.output = "Unknown view layer '{}'".format(
+          view_layer_name,
+        )
+        current_response.write()
+        return;
+      bpy.context.scene.view_layers[view_layer_name].use = True
 
   # Request inputs may be 0 for a one shot. In that case we'll skip the inputs
   # validation. This may need to be changed in the future.
