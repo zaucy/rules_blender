@@ -1,3 +1,6 @@
+"""Exports various blender rules
+"""
+
 _render_format_extensions = {
     "TGA": "",
     "RAWTGA": "",
@@ -36,14 +39,13 @@ def _zfill(s, n):
         s = "0" + s if len(s) < i else s
     return s
 
-def _rel_from(path):
-    return "/".join([".." for _ in path.split("/")][:-1])
-
-BlenderLibraryInfo = provider()
+BlenderLibraryInfo = provider(
+    "Separate blender sources used by blender_render as a dependency",
+    fields = ["srcs"],
+)
 
 def _blender_render(ctx):
     outputs = []
-    render_format = ctx.attr.render_format
     frame_start = ctx.attr.frame_start
     frame_end = ctx.attr.frame_end
     batch_render = ctx.attr.batch_render
@@ -55,9 +57,6 @@ def _blender_render(ctx):
     batch_count = ((frame_end+1) - frame_start) // batch_render
     if ((frame_end+1) - frame_start) % batch_render > 0:
         batch_count += 1
-
-    build_file_dir = ctx.build_file_path.rstrip("BUILD").rstrip("BUILD.bazel")
-    root_out_dir = _rel_from(ctx.file.blend_file.path) + "/" + ctx.bin_dir.path + "/" + build_file_dir
 
     inputs = [ctx.file.blend_file]
 
@@ -244,7 +243,7 @@ blender_render = rule(
             doc = "Blender executable to use for the render.",
             default = Label("@blender//:blender"),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "_bazel_blender_render_worker": attr.label(
             default = Label("@rules_blender//rules_blender_scripts:bazel_blender_render_worker.py"),
@@ -341,7 +340,7 @@ blender_script = rule(
             doc = "Blender executable to use",
             default = Label("@blender//:blender"),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
 )
@@ -456,7 +455,7 @@ blender_test = rule(
             doc = "Blender executable to use",
             default = Label("@blender//:blender"),
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
         "_bash_runfiles": attr.label(
             default = Label("@bazel_tools//tools/bash/runfiles"),
