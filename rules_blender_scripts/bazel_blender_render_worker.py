@@ -154,7 +154,7 @@ def handle_work_request():
   else:
     bpy.context.scene.render.use_file_extension = False
 
-  if len(args.view_layers) > 0:
+  if bool(args.view_layers):
     for view_layer in bpy.context.scene.view_layers:
       print(view_layer)
       view_layer.use = False
