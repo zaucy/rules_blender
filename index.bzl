@@ -51,6 +51,9 @@ def _blender_render(ctx):
     batch_render = ctx.attr.batch_render
     outext = _render_format_extensions[ctx.attr.render_format]
 
+    if frame_start > frame_end:
+        fail("frame_start must be <= frame_end")
+
     if batch_render == 0:
         batch_render = (frame_end+1) - frame_start
 
@@ -89,18 +92,29 @@ def _blender_render(ctx):
             args.add("-s", batch_frame_start)
             args.add("-e", batch_frame_end)
 
-        for frame_num in range(batch_frame_start, batch_frame_end + 1):
-            frame_str = str(frame_num)
-            if len(frame_str) > 4:
-                fail("Does not support frames > 9999")
-            frame_str = _zfill(frame_str, 4)
+        rendering_single_frame = batch_count == 1 and frame_start == frame_end
+        
+        if rendering_single_frame:
+                outfilename = ctx.attr.name + outext
+                outfile = ctx.actions.declare_file(outfilename)
+                batch_outputs.append(outfile)
+        else:
+            for frame_num in range(batch_frame_start, batch_frame_end + 1):
+                frame_str = str(frame_num)
+                if len(frame_str) > 4:
+                    fail("Does not support frames > 9999")
+                frame_str = _zfill(frame_str, 4)
 
-            outfilename = ctx.attr.name + frame_str + outext
-            outfile = ctx.actions.declare_file(outfilename)
-            batch_outputs.append(outfile)
+                outfilename = ctx.attr.name + frame_str + outext
+                outfile = ctx.actions.declare_file(outfilename)
+                batch_outputs.append(outfile)
 
-        args.add("-o", batch_outputs[0].dirname + "/" + ctx.attr.name + "####" + outext)
-        args.add("-x", "1")
+        if rendering_single_frame:
+            args.add("-o", batch_outputs[0])
+            args.add("-x", "0")
+        else:
+            args.add("-o", batch_outputs[0].dirname + "/" + ctx.attr.name + "####" + outext)
+            args.add("-x", "1")
 
         if ctx.attr.render_engine != "UNSET":
             args.add("-E", ctx.attr.render_engine)
@@ -218,11 +232,11 @@ blender_render = rule(
         ),
         "frame_start": attr.int(
             doc = "Start frame in animation",
-            mandatory = True,
+            default = 0,
         ),
         "frame_end": attr.int(
             doc = "End frame in animation",
-            mandatory = True,
+            default = 0,
         ),
         "python_scripts": attr.label_list(
             doc = "Python scripts to run right before render begins",

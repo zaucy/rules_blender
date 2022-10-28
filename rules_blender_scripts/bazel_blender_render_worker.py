@@ -142,12 +142,15 @@ def handle_work_request():
   if args.render_output:
     args.render_output = args.render_output.strip('\'\"')
     bpy.context.scene.render.filepath = os.path.abspath(args.render_output)
-    if bpy.context.scene.frame_start == bpy.context.scene.frame_end:
-      bpy.context.scene.render.filepath = bpy.context.scene.render.frame_path(frame=bpy.context.scene.frame_start)
 
   for python_script in args.python_scripts:
     debug_log("Executing python script: %s" % python_script)
     execfile(python_script)
+
+  if args.use_extension:
+    bpy.context.scene.render.use_file_extension = True
+  else:
+    bpy.context.scene.render.use_file_extension = False
 
   # Request inputs may be 0 for a one shot. In that case we'll skip the inputs
   # validation. This may need to be changed in the future.
