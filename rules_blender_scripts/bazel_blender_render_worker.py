@@ -87,11 +87,12 @@ class BazelWorkResponse:
     debug_log("Writing work response: %s" % response_json)
     print(response_json, file=sys.stderr)
 
-def execfile(filepath):
+def execfile(filepath, args):
   import os
   global_namespace = {
     "__file__": filepath,
     "__name__": "__main__",
+    "rules_blender_python_script_args": args,
   }
   with open(filepath, 'rb') as file:
     # importing builtins because blender re.compile gets conflicted here
@@ -146,7 +147,7 @@ def handle_work_request():
 
   for python_script in args.python_scripts:
     debug_log("Executing python script: %s" % python_script)
-    execfile(python_script)
+    execfile(python_script, extra_args)
 
   if args.use_extension:
     bpy.context.scene.render.use_file_extension = True

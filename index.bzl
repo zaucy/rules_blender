@@ -128,12 +128,12 @@ def _blender_render(ctx):
         else:
             args.add("-f", batch_frame_start)
 
+        for view_layer in ctx.attr.view_layers:
+            args.add("--view_layer", view_layer)
+
         if len(ctx.attr.python_script_args) > 0:
             args.add("--")
             args.add_all(ctx.attr.python_script_args)
-
-        for view_layer in ctx.attr.view_layers:
-            args.add("--view_layer", view_layer)
 
         progress_message = "Rendering '{}'".format(ctx.file.blend_file.path)
 
