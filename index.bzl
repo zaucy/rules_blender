@@ -11,6 +11,7 @@ _render_format_extensions = {
     "AVIJPEG": ".avi",
     "PNG": ".png",
     "BMP": ".bmp",
+    "WEBM": ".webm",
 }
 
 # https://docs.blender.org/manual/en/latest/files/media/image_formats.html#image-formats
@@ -44,12 +45,17 @@ BlenderLibraryInfo = provider(
     fields = ["srcs"],
 )
 
+def is_video_render_format(format):
+    return format == "WEBM"
+
 def _blender_render(ctx):
     outputs = []
     frame_start = ctx.attr.frame_start
     frame_end = ctx.attr.frame_end
     batch_render = ctx.attr.batch_render
     outext = _render_format_extensions[ctx.attr.render_format]
+
+    is_video = is_video_render_format(ctx.attr.render_format)
 
     if frame_start > frame_end:
         fail("frame_start must be <= frame_end")
@@ -94,7 +100,7 @@ def _blender_render(ctx):
 
         rendering_single_frame = batch_count == 1 and frame_start == frame_end
         
-        if rendering_single_frame:
+        if rendering_single_frame or is_video:
                 outfilename = ctx.attr.name + outext
                 outfile = ctx.actions.declare_file(outfilename)
                 batch_outputs.append(outfile)
@@ -109,7 +115,7 @@ def _blender_render(ctx):
                 outfile = ctx.actions.declare_file(outfilename)
                 batch_outputs.append(outfile)
 
-        if rendering_single_frame:
+        if rendering_single_frame or is_video:
             args.add("-o", batch_outputs[0])
             args.add("-x", "0")
         else:
@@ -118,6 +124,9 @@ def _blender_render(ctx):
 
         if ctx.attr.render_engine != "UNSET":
             args.add("-E", ctx.attr.render_engine)
+
+        if rendering_single_frame and is_video:
+            fail("Cannot use video render format (e.g. {}) for single frame. Please set frame_start and frame_end when using a video format.".format(ctx.attr.render_format))
 
         args.add("-F", ctx.attr.render_format)
 
@@ -228,6 +237,7 @@ blender_render = rule(
                 "AVIJPEG",
                 "PNG",
                 "BMP",
+                "WEBM",
             ],
         ),
         "scene": attr.string(

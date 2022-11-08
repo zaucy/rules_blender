@@ -38,7 +38,7 @@ parser.add_argument("-s", type=int, dest="frame_start")
 parser.add_argument("-e", type=int, dest="frame_end")
 parser.add_argument("-a", dest="render_anim", default=False, action="store_true")
 parser.add_argument("-E", metavar="engine", dest="engine")
-parser.add_argument("-F", metavar="format", dest="render_format", choices=['TGA', 'RAWTGA', 'JPEG', 'IRIS', 'IRIZ', 'AVIRAW', 'AVIJPEG', 'PNG', 'BMP'])
+parser.add_argument("-F", metavar="format", dest="render_format", choices=['TGA', 'RAWTGA', 'JPEG', 'IRIS', 'IRIZ', 'AVIRAW', 'AVIJPEG', 'PNG', 'BMP', 'WEBM'])
 parser.add_argument("-S", metavar="ExampleScene", dest="scene")
 parser.add_argument("--view_layer", action='append', dest="view_layers")
 
@@ -128,7 +128,14 @@ def handle_work_request():
     bpy.context.window.scene = bpy.data.scenes[args.scene]
 
   if args.render_format:
-    bpy.context.scene.render.image_settings.file_format = args.render_format
+    if args.render_format == "WEBM":
+      bpy.context.scene.render.image_settings.file_format = "FFMPEG"
+      bpy.context.scene.render.image_settings.color_mode = 'RGBA'
+      bpy.context.scene.render.ffmpeg.format = 'WEBM'
+      bpy.context.scene.render.ffmpeg.codec = 'WEBM'
+      bpy.context.scene.render.ffmpeg.constant_rate_factor = 'PERC_LOSSLESS'
+    else:
+      bpy.context.scene.render.image_settings.file_format = args.render_format
 
   if args.render_frame is not None:
     bpy.context.scene.frame_start = args.render_frame
