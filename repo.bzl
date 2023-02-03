@@ -193,12 +193,12 @@ _known_blender_archives = {
         ),
         "linux64": struct(
             strip_prefix = "blender-3.4.1-linux-x64",
-            urls = ["{}/Blender3.3/blender-3.4.1-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            urls = ["{}/Blender3.4/blender-3.4.1-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
             sha256 = "1497f83f93e9bbbde745422c795ed10fe15f92f5622b4421768f149fbe776981",
         ),
         "macos": struct(
             strip_prefix = "",
-            urls = ["{}/Blender3.3/blender-3.4.1-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            urls = ["{}/Blender3.4/blender-3.4.1-macos-x64.dmg".format(mirror) for mirror in _mirrors],
             sha256 = "",
         ),
     },
