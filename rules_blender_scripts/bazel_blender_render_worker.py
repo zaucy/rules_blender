@@ -185,7 +185,11 @@ def handle_work_request():
         if req_input_path == blend_path:
           found_input = True
           break
-      if not found_input:
+      if not found_input and os.path.basename(blend_path) == 'copybuffer.blend':
+        # current_response.output = "[WARNING] 'copybuffer.blend' reference"
+        # current_response.write()
+        pass
+      elif not found_input:
         current_response.output = "Cannot find '{}'. Make sure '{}' is declared in a blender_library srcs in blender_render deps.".format(
           blend_path,
           os.path.basename(blend_path),
