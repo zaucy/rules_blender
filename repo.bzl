@@ -188,7 +188,7 @@ _known_blender_archives = {
     "3.4.1": {
         "windows64": struct(
             strip_prefix = "blender-3.4.1-windows-x64",
-            urls = ["{}/Blender3.3/blender-3.4.1-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            urls = ["{}/Blender3.4/blender-3.4.1-windows-x64.zip".format(mirror) for mirror in _mirrors],
             sha256 = "02377977bee5691bda45c3a80f60b16a07efe3b2eb02941ca2bead975361f124",
         ),
         "linux64": struct(
@@ -581,7 +581,7 @@ def _windows_program_files(rctx):
         return rctx.os.environ["ProgramFiles"]
     elif "PROGRAMFILES" in rctx.os.environ:
         return rctx.os.environ["PROGRAMFILES"]
-    
+
     return "C:\\Program Files"
 
 def _find_windows_system_installed_blender(rctx):
@@ -619,7 +619,7 @@ def _download_and_extract_dmg(rctx, archive, blender_version):
     hdiutil = rctx.which("hdiutil")
     if hdiutil == None:
         fail("Unable to find hdiutil to mount .dmg file")
-    
+
     mountroot = blender_version + "_mountroot"
     mountvolume = rctx.path(mountroot + "/Blender")
 
@@ -634,7 +634,7 @@ def _download_and_extract_dmg(rctx, archive, blender_version):
         fail("Failed to attach .dmg blender image")
 
     rctx.report_progress("Copying blender installation files")
-    
+
     rctx.execute(["mkdir", blender_version])
     rctx.execute(["cp", "-R", str(mountvolume) + "/", blender_version + "/"])
 
@@ -705,9 +705,9 @@ def _blender_repository(rctx):
 
     if blender_path != None:
         blender_executable_path = str(blender_path)
-        rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
+        rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION = blender_version), executable = False)
     elif blender_version != "system":
-        rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION=blender_version), executable = False)
+        rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION = blender_version), executable = False)
         if os_key == "macos":
             blender_executable_path = str(rctx.path(blender_version + "/Blender.app/Contents/MacOS/Blender"))
             _download_and_extract_dmg(rctx, archive, blender_version)
@@ -720,19 +720,21 @@ def _blender_repository(rctx):
     elif blender_version == "system":
         fail("blender_version was set to 'system', but no system installation of blender was found. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
 
-    rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path.replace("/", "\\")), executable = True)
-    rctx.file("blender_wrapper.bash", _blender_wrapper_sh.format(BLENDER_VERSION=blender_version, EXECUTABLE_PATH=blender_executable_path), executable = True)
-    
+    rctx.file("blender_wrapper.cmd", _blender_wrapper_cmd.format(BLENDER_VERSION = blender_version, EXECUTABLE_PATH = blender_executable_path.replace("/", "\\")), executable = True)
+    rctx.file("blender_wrapper.bash", _blender_wrapper_sh.format(BLENDER_VERSION = blender_version, EXECUTABLE_PATH = blender_executable_path), executable = True)
+
     if blender_executable_path == None:
         fail("Missing blender executable path. Cannot check for render devices.")
 
     rctx.file("check_gpus.py", _find_blender_gpus_script)
     check_gpus_result = rctx.execute([
         blender_executable_path,
-        "--log-level", "0",
+        "--log-level",
+        "0",
         "-noaudio",
         "-b",
-        "-P", rctx.path("check_gpus.py")
+        "-P",
+        rctx.path("check_gpus.py"),
     ])
 
     if check_gpus_result.return_code != 0:
@@ -758,13 +760,13 @@ def _blender_repository(rctx):
             for device in blender_env_info["devices"]:
                 if cycles_device_type == device["type"]:
                     enabled_devices.append(device)
-        
+
         if len(enabled_devices) == 0:
             devices_str = ""
             for device in blender_env_info["devices"]:
                 devices_str += "\t({})\t\t{}\n".format(device["type"], device["name"])
             fail("blender_repository attr cycles_device_types was set, but no matching device types were found.\nAvailable device options are the following:\n{}".format(devices_str))
-        
+
         enable_cycles_devices_py = _enable_cycles_devices_py
 
         for device in enabled_devices:
