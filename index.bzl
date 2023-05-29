@@ -35,6 +35,16 @@ _allowed_image_formats = [
     ".tiff",
 ]
 
+# https://docs.blender.org/manual/en/latest/modeling/texts/introduction.html
+_allowed_font_file_extensions = [
+    ".otf",  # OpenType
+    ".otc",  # OpenType
+    ".ttc",  # OpenType
+    ".ttf",  # OpenType / TrueType
+    ".tte",  # TrueType (windows only)
+    ".dfont",  # TrueType (macOS only)
+]
+
 def _zfill(s, n):
     for i in range(1, n + 1):
         s = "0" + s if len(s) < i else s
@@ -61,10 +71,10 @@ def _blender_render(ctx):
         fail("frame_start must be <= frame_end")
 
     if batch_render == 0:
-        batch_render = (frame_end+1) - frame_start
+        batch_render = (frame_end + 1) - frame_start
 
-    batch_count = ((frame_end+1) - frame_start) // batch_render
-    if ((frame_end+1) - frame_start) % batch_render > 0:
+    batch_count = ((frame_end + 1) - frame_start) // batch_render
+    if ((frame_end + 1) - frame_start) % batch_render > 0:
         batch_count += 1
 
     inputs = [ctx.file.blend_file]
@@ -99,11 +109,11 @@ def _blender_render(ctx):
             args.add("-e", batch_frame_end)
 
         rendering_single_frame = batch_count == 1 and frame_start == frame_end
-        
+
         if rendering_single_frame or is_video:
-                outfilename = ctx.attr.name + outext
-                outfile = ctx.actions.declare_file(outfilename)
-                batch_outputs.append(outfile)
+            outfilename = ctx.attr.name + outext
+            outfile = ctx.actions.declare_file(outfilename)
+            batch_outputs.append(outfile)
         else:
             for frame_num in range(batch_frame_start, batch_frame_end + 1):
                 frame_str = str(frame_num)
@@ -156,13 +166,14 @@ def _blender_render(ctx):
             )
         else:
             progress_message += " frame {}".format(batch_frame_start)
-        
+
         has_python_scripts = len(ctx.files.python_scripts) > 0
 
         if has_python_scripts:
             progress_message += " ("
             for python_script in ctx.files.python_scripts:
                 progress_message += "{}, ".format(python_script.basename)
+
             # remove trailing ", "
             progress_message = progress_message[:-2] + ")"
 
@@ -188,10 +199,10 @@ def _blender_render(ctx):
             mnemonic = "BlenderRender",
             progress_message = progress_message,
             execution_requirements = {
-                "supports-workers" : "1",
+                "supports-workers": "1",
                 "supports-multiplex-workers": "1",
                 "supports-worker-cancellation": "1",
-                "requires-worker-protocol" : "json",
+                "requires-worker-protocol": "json",
                 "worker-key-mnemonic": "BlenderRender",
             },
         )
@@ -257,7 +268,7 @@ blender_render = rule(
             allow_files = [".py"],
         ),
         "python_script_args": attr.string_list(
-            doc = "Arguments to pass to blender after '--'. Typically handled by the script the `python_script` attribute."
+            doc = "Arguments to pass to blender after '--'. Typically handled by the script the `python_script` attribute.",
         ),
         "deps": attr.label_list(
             doc = "`blender_library` dependencies",
@@ -292,12 +303,12 @@ def _blender_library(ctx):
 
 blender_library = rule(
     implementation = _blender_library,
-    doc = "Group .blend files and images together to be used as `deps` in `blender_render`.",
+    doc = "Group .blend files, images, and fonts together to be used as `deps` in `blender_render`.",
     attrs = {
         "srcs": attr.label_list(
-            doc = "List of blend files and image files",
+            doc = "List of blend, image, and font files",
             mandatory = True,
-            allow_files = [".blend"] + _allowed_image_formats,
+            allow_files = [".blend"] + _allowed_image_formats + _allowed_font_file_extensions,
         ),
     },
 )
@@ -356,7 +367,7 @@ blender_script = rule(
             allow_single_file = [".py"],
         ),
         "python_script_args": attr.string_list(
-            doc = "Arguments to pass to blender after '--' and the built in -o arguments"
+            doc = "Arguments to pass to blender after '--' and the built in -o arguments",
         ),
         "autoexec_scripts": attr.bool(
             doc = "Enable automatic Python script execution",
@@ -475,7 +486,7 @@ blender_test = rule(
             allow_single_file = [".py"],
         ),
         "python_script_args": attr.string_list(
-            doc = "Arguments to pass to blender after '--'"
+            doc = "Arguments to pass to blender after '--'",
         ),
         "autoexec_scripts": attr.bool(
             doc = "Enable automatic Python script execution",
