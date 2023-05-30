@@ -202,6 +202,23 @@ _known_blender_archives = {
             sha256 = "a6c540167b4d85c5cafc4602079fc58cafc5c0c6a58a8a6ae7ed4e3d0064602a",
         ),
     },
+    "3.5.0": {
+        "windows64": struct(
+            strip_prefix = "blender-3.5.0-windows-x64",
+            urls = ["{}/Blender3.5/blender-3.5.0-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            sha256 = "45a70dcde71fcfd7f40cbda68825c1d19aa849f46e9bdb8f9559d92162e3dd21",
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-3.5.0-linux-x64",
+            urls = ["{}/Blender3.5/blender-3.5.0-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            sha256 = "a74d52822d5753a1ffb617ac764bbacc12a4a6dec4c2b91e90cc2935a40fff68",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.5/blender-3.5.0-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "e436b3c2e3dd6b039c0ba078d3bc17e5b744d87bb3d15845465656bbc4dbb370",
+        ),
+    },
     "3.4.1": {
         "windows64": struct(
             strip_prefix = "blender-3.4.1-windows-x64",
