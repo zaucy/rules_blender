@@ -692,7 +692,8 @@ def print_blender_env_info():
     for device in cycles_preferences.devices:
         devices.append({"name": device.name, "type": device.type})
     
-    json.dump({"devices": devices}, sys.stderr)
+    devices_json = json.dumps({"devices": devices})
+    print("::::JSON::::" + devices_json)
 
 print_blender_env_info()
 """
@@ -777,12 +778,17 @@ def _blender_repository(rctx):
             check_gpus_result.stdout + check_gpus_result.stderr,
         ))
 
-    if not check_gpus_result.stderr.startswith("{"):
-        fail("Unexpected stderr content (expected json): " + check_gpus_result.stderr)
+    if check_gpus_result.stderr:
+        print(check_gpus_result.stderr)
+    
+    blender_env_info = None
+
+    for line in check_gpus_result.stdout.split("\n"):
+        json_prefix = "::::JSON::::"
+        if line.startswith(json_prefix):
+            blender_env_info = json.decode(line[len(json_prefix):])
 
     enabled_devices = []
-
-    blender_env_info = json.decode(check_gpus_result.stderr)
 
     cycles_device_types = rctx.attr.cycles_device_types
 
