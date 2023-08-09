@@ -185,6 +185,23 @@ _platform_build_file_contents = {
 }
 
 _known_blender_archives = {
+    "3.6.1": {
+        "windows64": struct(
+            strip_prefix = "blender-3.6.1-windows-x64",
+            urls = ["{}/Blender3.6/blender-3.6.1-windows-x64.zip".format(mirror) for mirror in _mirrors],
+            sha256 = "577c45adb82082c8ef03d6f288a9bb8d503a68c0dca8363a3671cf1500499ec5",
+        ),
+        "linux64": struct(
+            strip_prefix = "blender-3.6.1-linux-x64",
+            urls = ["{}/Blender3.6/blender-3.6.1-linux-x64.tar.xz".format(mirror) for mirror in _mirrors],
+            sha256 = "465e1ddeb60a9a7ac5712c9bcbfe8f23a5878484e65b3d9c28795f7a70113e31",
+        ),
+        "macos": struct(
+            strip_prefix = "",
+            urls = ["{}/Blender3.6/blender-3.6.1-macos-x64.dmg".format(mirror) for mirror in _mirrors],
+            sha256 = "edaec0f867c7b4e2204396500313f589ee177f8c4b50bb65aef3e2b17ffd1aeb",
+        ),
+    },
     "3.5.1": {
         "windows64": struct(
             strip_prefix = "blender-3.5.1-windows-x64",
@@ -780,7 +797,7 @@ def _blender_repository(rctx):
 
     if check_gpus_result.stderr:
         print(check_gpus_result.stderr)
-    
+
     blender_env_info = None
 
     for line in check_gpus_result.stdout.split("\n"):
@@ -825,7 +842,7 @@ blender_repository = repository_rule(
     attrs = {
         "only_system_installed_blender": attr.bool(),
         "blender_version": attr.string(
-            default = "3.5.1",
+            default = "3.6.1",
             values = _known_blender_archives.keys() + ["system"],
             doc = "Blender version. Used to download blender archive.",
         ),
