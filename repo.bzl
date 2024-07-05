@@ -751,7 +751,6 @@ def _blender_repository(rctx):
         fail("Attribute only_system_installed_blender is set to True, but cannot find system installed blender. If you believe this is a mistake please make an issue at https://github.com/zaucy/rules_blender/issues")
 
     build_file_contents = _get_platform_build_file_contents(rctx)
-    archive = _get_blender_archive(rctx, blender_version)
     blender_executable_path = ""
     os_key = _os_key(rctx.os)
 
@@ -759,6 +758,7 @@ def _blender_repository(rctx):
         blender_executable_path = str(blender_path)
         rctx.file("BUILD.bazel", build_file_contents.sys_build_file_content.format(BLENDER_VERSION = blender_version), executable = False)
     elif blender_version != "system":
+        archive = _get_blender_archive(rctx, blender_version)
         rctx.file("BUILD.bazel", build_file_contents.build_file_content.format(BLENDER_VERSION = blender_version), executable = False)
         if os_key == "macos":
             blender_executable_path = str(rctx.path(blender_version + "/Blender.app/Contents/MacOS/Blender"))
